@@ -16,8 +16,13 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
+# 根路由分发配置
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('user/', include('user.urls'), name='user'),
+    path('analysis/', include('analysis.urls'), name='analysis'),
+    path('community/', include('community.urls'), name='community'),
+    path('proceed/', include('proceed.urls'), name='proceed'),
 ]
