@@ -23,21 +23,20 @@ from django.urls import path, include
 
 from django.contrib import admin
 from django.urls import path, include
-# from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
-from drf_spectacular.views import SpectacularRedocView, SpectacularAPIView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     # YOUR PATTERNS
-    path("admin/", admin.site.urls),
-    
-    path('api-auth/', include('rest_framework.urls')),
-    path('user/', include('user.urls'), name='user'),
-    path('analysis/', include('analysis.urls'), name='analysis'),
-    path('community/', include('community.urls'), name='community'),
-    path('proceed/', include('proceed.urls'), name='proceed'),
-    
+    path("api/admin/", admin.site.urls),
     path('doc/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'), # redoc的路由
+    path('doc/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    path('api/user/', include('user.urls'), name='user'),
+    path('api/analysis/', include('analysis.urls'), name='analysis'),
+    path('api/community/', include('community.urls'), name='community'),
+    path('api/proceed/', include('proceed.urls'), name='proceed'),
+    
+
 ]
 
 # path('doc/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

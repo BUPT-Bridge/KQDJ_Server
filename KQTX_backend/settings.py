@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-++dgo-^r7(4!pm26dv%w9vrwdx4z6a9es2_vo^3c18ov$ekfuh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -39,6 +39,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'rest_framework',
     "drf_spectacular",
+    'drf_spectacular_sidecar',
+    "analysis",
+    "community",
+    "proceed",
+    "user",
 ]
 
 MIDDLEWARE = [
@@ -101,10 +106,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        'rest_framework.permissions.AllowAny',
     ]
 }
 
@@ -115,7 +119,7 @@ LANGUAGE_CODE = "zh-hans"
 
 TIME_ZONE = "Asia/Shanghai"
 
-USE_I18N = False
+USE_I18N = True
 
 USE_TZ = True
 
@@ -130,24 +134,21 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-# swagger settings
-REST_FRAMEWORK = {
-    # YOUR SETTINGS
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
+# drf_spectacular settings
 SPECTACULAR_SETTINGS = {
-    'TITLE': '平台的API',
-    'DESCRIPTION': '这是项目的API文档',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': None,
-    # 或者如果有统一的前缀，可以设置成
-    # 'SCHEMA_PATH_PREFIX': '^/api/',
-    "SWAGGER_UI_SETTINGS": {
-        "deepLinking": True,
-        "persistAuthorization": True,
-        "displayOperationId": True,
-    },
+    # 'TITLE': '平台的API',
+    # 'DESCRIPTION': '这是项目的API文档',
+    # 'VERSION': '1.0.0',
+    # 'SERVE_INCLUDE_SCHEMA': False,
+    # 'SCHEMA_PATH_PREFIX': None,
+    # # 或者如果有统一的前缀，可以设置成
+    # # 'SCHEMA_PATH_PREFIX': '^/api/',
+    # "SWAGGER_UI_SETTINGS": {
+    #     "deepLinking": True,
+    #     "persistAuthorization": True,
+    #     "displayOperationId": True,
+    # },
+    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
 }
