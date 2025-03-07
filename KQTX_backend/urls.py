@@ -18,6 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+
 # 根路由分发配置
 urlpatterns = [
     path("admin/", admin.site.urls),
