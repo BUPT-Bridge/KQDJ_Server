@@ -21,6 +21,7 @@ from django.urls import path, include
 # 根路由分发配置
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')),
     path('user/', include('user.urls'), name='user'),
     path('analysis/', include('analysis.urls'), name='analysis'),
     path('community/', include('community.urls'), name='community'),
