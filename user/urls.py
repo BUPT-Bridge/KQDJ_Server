@@ -10,4 +10,12 @@ from . import views
 
 urlpatterns = [
     # path("helloworld", views.HelloWorldView.as_view(), name="HelloWorldView"),
+    path("register_from_wechat", views.UserFunctions.as_view(), name="register_from_wechat"),
+    path("register_from_website", views.UserFunctions.as_view(), name="register_from_website"),
+    path("login_from_wechat", views.UserFunctions.as_view(), name="login_from_wechat"),
+    path("login_from_website", views.UserFunctions.as_view(), name="login_from_website"),
+    path("get_user_info", views.UserFunctions.as_view(), name="get_user_info"),
+    path("modify_user_info", views.UserFunctions.as_view(), name="modify_user_info"),
+    path("get_admin_list", views.UserFunctions.as_view(), name="get_admin_list"),
+    # path("delete_user", views.UserFunctions.as_view(), name="delete_user"),
 ]

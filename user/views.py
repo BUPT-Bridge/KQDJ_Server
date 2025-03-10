@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
+# 建议所有接口数据通过Body返回
 class UserFunctions(APIView):
     # 从微信小程序注册账号
     def register_from_wechat(self, request):
