@@ -1,6 +1,5 @@
 from django.shortcuts import render
 
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
