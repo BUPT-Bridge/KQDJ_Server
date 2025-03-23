@@ -33,5 +33,5 @@ class AdminFormFunctions(APIView):
         pass
     
     # 删除表单
-    def delete_a_form(self,request):
+    def delete_a_form(self,request):  # 只能开给最高管理
         pass

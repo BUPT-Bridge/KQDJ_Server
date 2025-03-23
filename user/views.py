@@ -23,6 +23,9 @@ class UserFunctions(APIView):
     def login_from_website(self, request):
         pass
 
+    def login_from_QRcode(self, request):
+        pass
+
     # 从请求中获取用户信息
     def get_user_info(self, request):
         pass

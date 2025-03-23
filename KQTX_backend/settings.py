@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = "django-insecure-++dgo-^r7(4!pm26dv%w9vrwdx4z6a9es2_vo^3c18ov$ekfuh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -37,13 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'rest_framework',
-    "drf_spectacular",
-    'drf_spectacular_sidecar',
-    "analysis",
-    "community",
-    "proceed",
-    "user",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -105,12 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ]
-}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -119,7 +109,7 @@ LANGUAGE_CODE = "zh-hans"
 
 TIME_ZONE = "Asia/Shanghai"
 
-USE_I18N = True
+USE_I18N = False
 
 USE_TZ = True
 
@@ -129,26 +119,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# 媒体文件路径，后期可以修改
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# drf_spectacular settings
-SPECTACULAR_SETTINGS = {
-    # 'TITLE': '平台的API',
-    # 'DESCRIPTION': '这是项目的API文档',
-    # 'VERSION': '1.0.0',
-    # 'SERVE_INCLUDE_SCHEMA': False,
-    # 'SCHEMA_PATH_PREFIX': None,
-    # # 或者如果有统一的前缀，可以设置成
-    # # 'SCHEMA_PATH_PREFIX': '^/api/',
-    # "SWAGGER_UI_SETTINGS": {
-    #     "deepLinking": True,
-    #     "persistAuthorization": True,
-    #     "displayOperationId": True,
-    # },
-    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
-    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
-    'REDOC_DIST': 'SIDECAR',
-}
