@@ -1,4 +1,9 @@
 from django.db import models
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFill
+
+GLOABL_AVATAR_WIDTH = 60
+GLOABL_AVATAR_HEIGHT = 60
 
 # Create your models here.
 class User(models.Model):
@@ -7,6 +12,10 @@ class User(models.Model):
     username = models.CharField(max_length=50, verbose_name='用户名')
     password = models.CharField(max_length=50, verbose_name='密码')
     phone = models.CharField(max_length=20, verbose_name='手机号')
+    avatar = ProcessedImageField(upload_to='picture/avatars',
+                                           processors=[ResizeToFill(GLOABL_AVATAR_WIDTH, GLOABL_AVATAR_HEIGHT)],
+                                           format='WEBP',
+                                           options={'quality': 60})
     # 权限等级，使用整数表示不同的权限级别
     PERMISSION_CHOICES = [
         (0, '普通用户'),
