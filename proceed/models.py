@@ -40,7 +40,7 @@ class MainForm(models.Model):
     
     # 添加辅助方法，将 Unix 时间戳转换回 datetime 对象
     def get_datetime(self):
-        return datetime.fromtimestamp(self.time_unix)
+        return datetime.fromtimestamp(self.upload_time)
     
     def __str__(self):
         return f"表单 {self.uuid} - {self.name} - {self.get_handle_display()}"
@@ -60,6 +60,9 @@ class ImageModel(models.Model):
     def save(self, *args, **kwargs):
         set_timestamp(self)
         super().save(*args, **kwargs)
+    
+    def get_datetime(self):
+        return datetime.fromtimestamp(self.upload_time)
 
     def __str__(self):
         return f"从该表单：{self.main_form.uuid} 获取图片, 图片：{self.image}"
