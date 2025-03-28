@@ -22,3 +22,13 @@ FORM_TYPE_CHOICES = [
     ('complaint', '投诉'),    # 第一个值是存储在数据库中的值，第二个是显示用的人类可读的值
     ('suggest', '建议'),
 ]
+
+IS_NEED_FEEDBACK_CHOICES = [
+    (0, '不需要回访'),
+    (1, '需要回访'),
+    (2, '已回访'),
+]
+
+NOT_NEED_FEEDBACK = 0
+NEED_FEEDBACK = 1
+NEED_FEEDBACK_DONE = 2

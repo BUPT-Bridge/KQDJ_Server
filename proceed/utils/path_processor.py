@@ -12,5 +12,5 @@ def get_image_path(instance: Any, filename: str) -> str:
     Returns:
         str: 生成的文件保存路径
     """
-    source_folder = 'handle_picture' if instance.source == 'form_picture' else 'user'
-    return os.path.join('images', source_folder, filename)
+    source_folder = 'admin' if instance.source == 'admin' else 'user'
+    return os.path.join('images', source_folder)

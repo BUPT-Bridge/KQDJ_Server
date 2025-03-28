@@ -1,6 +1,7 @@
 from django.db import models
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
+from .utils.constance import *
 
 GLOABL_AVATAR_WIDTH = 60
 GLOABL_AVATAR_HEIGHT = 60
@@ -16,17 +17,9 @@ class User(models.Model):
                                            processors=[ResizeToFill(GLOABL_AVATAR_WIDTH, GLOABL_AVATAR_HEIGHT)],
                                            format='WEBP',
                                            options={'quality': 60})
-    # 权限等级，使用整数表示不同的权限级别
-    PERMISSION_CHOICES = [
-        (0, '普通用户'),
-        (1, '管理员'),
-        (2, '超级管理员'),
-    ]
     permission_level = models.IntegerField(
-        choices=PERMISSION_CHOICES, 
-        default=0, 
-        verbose_name='权限等级'
-    )
+        choices=PERMISSION_CHOICES, default=COMMON_USER, 
+        verbose_name='权限等级')
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')

@@ -42,3 +42,14 @@ class Cover(models.Model):
 
     def __str__(self):
         return self.title
+    
+
+class PageView(models.Model):
+    view_count = models.IntegerField(default=0, verbose_name='访问量')
+
+    class Meta:
+        verbose_name = '页面访问量'
+        verbose_name_plural = '页面访问量'
+
+    def __str__(self):
+        return self.page
