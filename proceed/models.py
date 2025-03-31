@@ -3,11 +3,12 @@ from datetime import datetime
 from imagekit.models import ProcessedImageField
 from .manager import MainFormManager
 import time
-from .utils.path_processor import *
+from .utils.path_processor import get_image_path
 from .utils.choice import *
-from .utils.uuid import *
-from .utils.sync_feedback_status import *
-from utils import *
+from .utils.uuid import generate_custom_uuid
+from .utils.sync_feedback_status import sync_feedback_status
+from .utils import *
+from utils.time_utils import set_timestamp  # 改为使用绝对导入
 
 # Create your models here.
 class MainForm(models.Model):

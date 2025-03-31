@@ -6,7 +6,6 @@
 4.添加统计方法
 """
 from django.db import models
-from proceed.serializers import MainFormSerializer, MainFormSerializerSimple
 from django.core.paginator import Paginator
 
 class MainFormQuerySet(models.QuerySet):
@@ -16,6 +15,7 @@ class MainFormQuerySet(models.QuerySet):
         :param simple: 是否使用简单序列化器
         :return: 序列化后的数据
         """
+        from proceed.serializers import MainFormSerializer, MainFormSerializerSimple
         serializer_class = MainFormSerializerSimple if simple else MainFormSerializer
         return serializer_class(self, many=True).data
 

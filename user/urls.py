@@ -6,16 +6,15 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from . import views
+from .views import UserFunctions
 
 urlpatterns = [
-    # path("helloworld", views.HelloWorldView.as_view(), name="HelloWorldView"),
-    path("register_from_wechat", views.UserFunctions.as_view(), name="register_from_wechat"),
-    path("register_from_website", views.UserFunctions.as_view(), name="register_from_website"),
-    path("login_from_wechat", views.UserFunctions.as_view(), name="login_from_wechat"),
-    path("login_from_website", views.UserFunctions.as_view(), name="login_from_website"),
-    path("get_user_info", views.UserFunctions.as_view(), name="get_user_info"),
-    path("modify_user_info", views.UserFunctions.as_view(), name="modify_user_info"),
-    path("get_admin_list", views.UserFunctions.as_view(), name="get_admin_list"),
-    # path("delete_user", views.UserFunctions.as_view(), name="delete_user"),
+    path('register', UserFunctions.as_view(), name='register'),
+    # path("register_from_website", UserFunctions.as_view(), name="register_from_website"),
+    # path("login_from_wechat", UserFunctions.as_view(), name="login_from_wechat"),
+    # path("login_from_website", UserFunctions.as_view(), name="login_from_website"),
+    # path("get_user_info", UserFunctions.as_view(), name="get_user_info"),
+    # path("modify_user_info", UserFunctions.as_view(), name="modify_user_info"),
+    # path("get_admin_list", UserFunctions.as_view(), name="get_admin_list"),
+    # path("delete_user", UserFunctions.as_view(), name="delete_user"),
 ]

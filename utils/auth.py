@@ -4,7 +4,7 @@ from functools import wraps
 from rest_framework.response import Response
 from django.conf import settings
 # 添加用户模型导入
-from user.models import User  # 请确保这是正确的用户模型导入路径
+from user.models import Users  # 请确保这是正确的用户模型导入路径
 
 """
 验证token的装饰器
@@ -39,9 +39,9 @@ class Auth:
     def get_user_permission(self, openid):
         """获取用户权限等级"""
         try:
-            user = User.objects.get(openid=openid)
+            user = Users.objects.get(openid=openid)
             return user.permission_level
-        except User.DoesNotExist:
+        except Users.DoesNotExist:
             return None
 
     def generate_token(self, openid):
@@ -92,7 +92,7 @@ class Auth:
     def verify_user_exists(self, openid):
         """验证用户是否存在于数据库中"""
         try:
-            return User.objects.filter(openid=openid).exists()
+            return Users.objects.filter(openid=openid).exists()
         except Exception:
             return False
 

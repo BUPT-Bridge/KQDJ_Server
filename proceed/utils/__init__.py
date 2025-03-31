@@ -25,7 +25,7 @@ choice.py:
 """
 
 from .uuid import *
-from path_processor import *
+from .path_processor import *
 from .choice import *
 
 __all__ = [
