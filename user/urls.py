@@ -6,15 +6,10 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from .views import UserFunctions
+from .views import UserRegisterWechat,UserLoginWechat, UserInfo
 
 urlpatterns = [
-    path('register', UserFunctions.as_view(), name='register'),
-    # path("register_from_website", UserFunctions.as_view(), name="register_from_website"),
-    # path("login_from_wechat", UserFunctions.as_view(), name="login_from_wechat"),
-    # path("login_from_website", UserFunctions.as_view(), name="login_from_website"),
-    # path("get_user_info", UserFunctions.as_view(), name="get_user_info"),
-    # path("modify_user_info", UserFunctions.as_view(), name="modify_user_info"),
-    # path("get_admin_list", UserFunctions.as_view(), name="get_admin_list"),
-    # path("delete_user", UserFunctions.as_view(), name="delete_user"),
+    path('register', UserRegisterWechat.as_view(), name='register'),
+    path('LoginWechat', UserLoginWechat.as_view(), name='login_from_wechat'),
+    path('UserInfo', UserInfo.as_view(), name='info'),
 ]

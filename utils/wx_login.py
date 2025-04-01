@@ -27,7 +27,7 @@ def wx_login(code: str) -> Optional[Dict]:
         
         if 'errcode' in data:
             print(f"微信登录错误: {data['errmsg']}")
-            return None
+            return data
             
         # 成功返回数据示例：{'session_key': 'xxx', 'openid': 'xxx'}
         return {
