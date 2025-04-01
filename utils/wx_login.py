@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, Optional
+from typing import Dict
 
 # 微信小程序配置
 WX_APP_ID = "你的小程序APPID"
@@ -37,12 +37,3 @@ def wx_login(code: str) -> Dict:
     except Exception as e:
         print(f"微信登录发生异常: {str(e)}")
         raise Exception(f"微信登录失败: {str(e)}")
-
-# 使用示例
-if __name__ == "__main__":
-    test_code = "测试code"
-    result = wx_login(test_code)
-    if result:
-        print("登录成功:", result)
-    else:
-        print("登录失败")
