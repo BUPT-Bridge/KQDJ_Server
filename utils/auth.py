@@ -9,7 +9,7 @@ from user.models import Users  # 请确保这是正确的用户模型导入路�
 """
 验证token的装饰器
 使用示例：
-    @auth.token_required
+        @auth.token_required
         def protected_view(request):
             user_openid = request.openid
             # 进行后续业务逻辑处理
