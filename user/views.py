@@ -1,7 +1,9 @@
 from rest_framework.views import APIView
 from .models import Users
+from django.utils.decorators import method_decorator
 from utils.wx_login import wx_login
 from utils.response import CustomResponse
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 from .serializers import UserSerializer
 from utils.auth import auth  # 添加这行导入
@@ -53,15 +55,43 @@ class LoginOrRegisterWechat(APIView):
             'user_id': user.id,
             'token': auth.generate_token(openid)
             }
+    
+
+class LoginTest(APIView):
+    def post(self, request):
+        return CustomResponse(self._login_or_register,request)
+    
+    def _login_or_register(self, request) -> dict:
+        # 获取请求数据
+        data = request.data
+        openid = data['openid'] # 获取code 如果没有code会报错
+
+        if Users.objects.filter(openid=openid).exists():
+            return self._login_from_wechat(openid)
+        else:
+            user = Users.objects.create(openid=openid)
+        return {
+                'message': '注册成功',
+                'token': auth.generate_token(openid)
+            }
+    def _login_from_wechat(self,openid):
+        user = Users.objects.filter(openid=openid)
+        return {
+            'message': '登录成功',
+            'token': auth.generate_token(openid)
+            }
+
 
 class UserInfo(APIView):
     
-    @auth.token_required
-    def _user_info(self,request):
+    @method_decorator(auth.token_required)
+    def post(self, request, *args, **kwargs):
         openid = request.openid
-        
-
-    def post(self,request):
+        return Response({
+            'message': '获取用户信息成功',
+            'user_id': openid,
+            'token': request.token_payload
+        })
         # request.
         # try:
         #     data = request.data
