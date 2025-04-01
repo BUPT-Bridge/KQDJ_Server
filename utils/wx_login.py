@@ -6,7 +6,7 @@ WX_APP_ID = "你的小程序APPID"
 WX_APP_SECRET = "你的小程序SECRET"
 WX_LOGIN_URL = "https://api.weixin.qq.com/sns/jscode2session"
 
-def wx_login(code: str) -> Optional[Dict]:
+def wx_login(code: str) -> Dict:
     """
     微信小程序登录
     :param code: 小程序登录时获取的 code
@@ -27,9 +27,8 @@ def wx_login(code: str) -> Optional[Dict]:
         
         if 'errcode' in data:
             print(f"微信登录错误: {data['errmsg']}")
-            return data
-            
-        # 成功返回数据示例：{'session_key': 'xxx', 'openid': 'xxx'}
+            raise Exception(data['errmsg'])
+            # return data
         return {
             'session_key': data.get('session_key'),
             'openid': data.get('openid')
@@ -37,7 +36,7 @@ def wx_login(code: str) -> Optional[Dict]:
         
     except Exception as e:
         print(f"微信登录发生异常: {str(e)}")
-        return None
+        raise Exception(f"微信登录失败: {str(e)}")
 
 # 使用示例
 if __name__ == "__main__":

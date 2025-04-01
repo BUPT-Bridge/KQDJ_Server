@@ -9,7 +9,7 @@ from user.models import Users  # 请确保这是正确的用户模型导入路�
 """
 验证token的装饰器
 使用示例：
-    @auth.token_required
+        @auth.token_required
         def protected_view(request):
             user_openid = request.openid
             # 进行后续业务逻辑处理
@@ -33,7 +33,7 @@ class Auth:
             cls._instance = super().__new__(cls)
             # 初始化配置
             cls._instance.jwt_secret = getattr(settings, 'JWT_SECRET', 'your-secret-key')
-            cls._instance.jwt_expiration = timedelta(days=7)
+            cls._instance.jwt_expiration = timedelta(days=14)
         return cls._instance
 
     def get_user_permission(self, openid):
@@ -46,25 +46,25 @@ class Auth:
 
     def generate_token(self, openid):
         """
-        生成JWT token,包含用户openid和权限信息
+        生成JWT token,包含用户openid和权限信息，返回带Bearer前缀的token
         """
         permission_level = self.get_user_permission(openid)
         if permission_level is None:
             return None
-            
+        current_timestamp = datetime.now().timestamp()
         payload = {
             'openid': openid,
             'permission_level': permission_level,
-            'exp': datetime.now() + self.jwt_expiration,
-            'iat': datetime.now(),
+            'exp': int(current_timestamp + self.jwt_expiration.total_seconds()),
         }
-        return jwt.encode(payload, self.jwt_secret, algorithm='HS256')
+        jwt_token = jwt.encode(payload, self.jwt_secret, algorithm='HS256')
+        return f"Bearer {jwt_token}"
 
     def verify_token(self, token):
         """验证JWT token"""
         try:
             return jwt.decode(token, self.jwt_secret, algorithms=['HS256'])
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
             return None
 
     def get_token_from_header(self, request):
@@ -75,7 +75,7 @@ class Auth:
         2. 必须以'Bearer '开头（注意空格）
         3. Token不能为空
         """
-        auth_header = request.headers.get('Authorization', '')
+        auth_header = request.headers.get('Authorization')
         
         if not auth_header:
             return None
@@ -86,7 +86,6 @@ class Auth:
         token = auth_header[7:].strip()
         if not token:
             return None
-            
         return token
 
     def verify_user_exists(self, openid):
