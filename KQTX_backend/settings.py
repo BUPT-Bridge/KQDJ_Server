@@ -42,9 +42,7 @@ INSTALLED_APPS = [
     "proceed.apps.ProceedConfig",
     "community.apps.CommunityConfig",
     "analysis.apps.AnalysisConfig",
-    "user.apps.UserConfig",
-    'drf_spectacular',
-    'drf_spectacular_sidecar',
+    "user.apps.UserConfig"
 ]
 
 MIDDLEWARE = [
@@ -116,9 +114,6 @@ TIME_ZONE = "Asia/Shanghai"
 USE_I18N = False
 
 USE_TZ = True
-
-# JWT_SECRET = os.environ['JWT_SECRET']  # 生产环境必须设置环境变量
-JWT_SECRET = 'development-secret-key'  # 开发环境可以使用固定值
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

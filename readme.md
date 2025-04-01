@@ -74,7 +74,7 @@ class LoginTest(APIView):
         return CustomResponse(self._login_or_register,request)
 ```
 - `class`后为类名，继承APIView
-- `def` 定义api方法，正常逻辑函数写为私有函数，如*_login_or_register* ,前面加一个`_`
+- `def` 定义api方法，正常逻辑函数写为私有函数，如<i>_login_or_register</i> ,前面加一个`_`
 
 - `CustomResponse`为自定义错误处理和返回相应函数，接受的私有函数要求返回为<mark>dict(字典)</mark>格式，`CustomResponse`第二个参数为私有函数所需要的参数
 - 如果有异常情况让报错终止函数，不需要在主函数中额外返回

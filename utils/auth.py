@@ -32,7 +32,7 @@ class Auth:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             # 初始化配置
-            cls._instance.jwt_secret = getattr(settings, 'JWT_SECRET', 'your-secret-key')
+            cls._instance.jwt_secret = getattr(settings, 'SECRET_KEY', 'your-secret-key')
             cls._instance.jwt_expiration = timedelta(days=14)
         return cls._instance
 
