@@ -24,17 +24,15 @@ class LoginOrRegisterWechat(APIView):
         if Users.objects.filter(openid=openid).exists():
             return self._login_from_wechat(openid)
         else:
-            user = Users.objects.create(openid=openid)
+            Users.objects.create(openid=openid)
         return {
                 'message': '注册成功',
-                'user_id': user.id,
                 'token': auth.generate_token(openid)
             }
     def _login_from_wechat(self,openid):
-        user = Users.objects.filter(openid=openid)
+        Users.objects.filter(openid=openid)
         return {
             'message': '登录成功',
-            'user_id': user.id,
             'token': auth.generate_token(openid)
             }
 
@@ -50,13 +48,13 @@ class LoginTest(APIView):
         if Users.objects.filter(openid=openid).exists():
             return self._login_from_wechat(openid)
         else:
-            user = Users.objects.create(openid=openid)
+            Users.objects.create(openid=openid)
         return {
                 'message': '注册成功',
                 'token': auth.generate_token(openid)
             }
     def _login_from_wechat(self,openid):
-        user = Users.objects.filter(openid=openid)
+        Users.objects.get(openid=openid)
         return {
             'message': '登录成功',
             'token': auth.generate_token(openid)

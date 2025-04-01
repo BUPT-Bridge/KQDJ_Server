@@ -1,0 +1,91 @@
+# 各个自定义接口的实现和示例
+
+## Before Working
+
+### 数据迁移与启动命令
+1. 执行以下命令
+```cmd
+python manage.py makemigrations user proceed community analysis
+
+python manage.py migrate
+```
+
+2. 直接运行服务
+
+```cmd
+python manage.py runserver 
+
+```
+`Attention!` 要在根目录下即/home/zhao/KQDJ_Server运行该命令
+
+如果在局域网运行，想要别人连接到改服务运行：
+```cmd
+python manage.py runserver 0.0.0.0:8000 
+
+```
+
+### 调试方法 
+- 建议采用`Reqable` [官网链接](https://reqable.com/)
+#### 创建集合和请求
+ 该步骤比较简单自己做
+#### 创建环境变量
+![](./tutor_picture/屏幕截图%202025-04-02%20004340.png)
+- 如图所示，创建名为`token`的环境变量
+- 另外，我们强烈建议再创建一个名为`BASE_URL`的环境变量，将*localhost:8000/api*放入
+#### 设置自动获取token脚本
+如图
+![](./tutor_picture/image.png)
+如上位置设置python脚本
+- `注意`前期测试采用test接口，test接口脚本如下
+```python 
+from reqable import *
+
+def onRequest(context, request):
+  return request
+
+def onResponse(context, response):
+  response.body.jsonify()
+  print(response.body['data']['token'])
+  context.env['token'] = response.body['data']['token']
+  return response
+
+```
+- 另外在所有需要token校验的位置设置如下脚本
+
+```python
+from reqable import *
+
+def onRequest(context, request):
+  request.headers.add('Authorization', context.env['token'])
+  return request
+
+def onResponse(context, response):
+  return response
+```
+即可丝滑启动
+
+## When You Woring——开发接口调用规范
+
+### Response接口调用规范
+以如下代码为例
+```python 
+class LoginTest(APIView):
+    def post(self, request):
+        return CustomResponse(self._login_or_register,request)
+```
+- `class`后为类名，继承APIView
+- `def` 定义api方法，正常逻辑函数写为私有函数，如*_login_or_register* ,前面加一个`_`
+
+- `CustomResponse`为自定义错误处理和返回相应函数，接受的私有函数要求返回为<mark>dict(字典)</mark>格式，`CustomResponse`第二个参数为私有函数所需要的参数
+- 如果有异常情况让报错终止函数，不需要在主函数中额外返回
+
+### 修饰器调用规范(即token校验函数)
+```python
+    @method_decorator(auth.token_required)
+    def get(self, request):
+        openid = request.openid
+        return CustomResponse(self._get_user_info, openid)
+```
+- 首先在需要被校验的函数上添加`@method_decorator`
+- 在主函数中使用`request.openid`读取到解码之后的openid
+- 使用`@method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_USER]))`进行权限控制
