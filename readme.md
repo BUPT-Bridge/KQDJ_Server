@@ -93,7 +93,7 @@ class LoginTest(APIView):
 ### 分页器调用规范
 <mark>注意：</mark>所有列表只要是`多个`请进行分页操作！
 
-- request的url示例: *http://localhost:8000/api/example?page=3&per_page=20*  主要是后面的查询参数
+- request的url示例: *http://localhost:8000/api/user/Adminlist?page=3&page_size=20*  主要是后面的查询参数
 - 以下代码为`user/view`的调用示例，即在查询集后面加上`.paginate(request)`
 ```python
 admin_data = admin_queryset.order_by('-created_at').paginate(request)

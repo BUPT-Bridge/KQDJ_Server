@@ -123,10 +123,10 @@ class Auth:
                     )
                     
                     # 验证是否满足任一权限要求
-                    if not any(permission_level >= p for p in required_permissions):
+                    if not any(permission_level == p for p in required_permissions):
                         return Response({
                             'code': 403, 
-                            'message': '权限不足',
+                            'message': '权限不符',
                             'required': required_permissions,
                             'current': permission_level
                         })

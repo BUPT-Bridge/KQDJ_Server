@@ -5,7 +5,7 @@ import json
 from django.conf import settings
 
 class VerificationCode:
-    def __init__(self, secret_key: str = getattr(settings, 'SECRET_KEY', 'your-secret-key'), expire_seconds: int = 300):
+    def __init__(self, secret_key: str = getattr(settings, 'SECRET_KEY', 'your-secret-key'), expire_seconds: int = 1800):
         """
         初始化验证码生成器
         :param secret_key: 密钥

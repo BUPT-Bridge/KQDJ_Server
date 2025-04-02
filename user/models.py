@@ -1,8 +1,6 @@
 from django.db import models
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-import time
-import os
 from .utils.constance import *
 from .utils.rename import avatar_upload_path
 from .manager import UsersManager
@@ -49,7 +47,6 @@ class Users(models.Model):
             update_fields = {'username', 'phone', 'password', 'avatar'}
             valid_fields = {field: value for field, value in data.items() 
                           if field in update_fields and value}
-            print(valid_fields)
             if not valid_fields:
                 raise ValueError("至少提供一个需要更新的字段")
             

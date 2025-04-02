@@ -12,6 +12,7 @@ from .utils.validate import VerificationCode
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
 # 建议所有接口数据通过Body返回
+
 class LoginOrRegisterWechat(APIView):
     # 从微信小程序注册/登录账号
     def post(self, request):
@@ -105,12 +106,12 @@ class AdminList(APIView):
 class ChangePermission(APIView):
     
     @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
-    def get(self, request):
+    def get(self, _):
         return CustomResponse(self._generate_code)
     
     @method_decorator(auth.token_required(required_permission=[COMMON_USER]))
     def post(self, request):
-        code = request.data.get('code')
+        code = request.data['code']
         openid = request.openid
         return CustomResponse(self._verify_code, code, openid)
         
@@ -126,28 +127,3 @@ class ChangePermission(APIView):
             reply = verification.verify_code(code)
         Users.query_manager.self_fliter(openid).update(permission_level=ADMIN_USER)
         return reply
-    # # 使用账号密码登录
-    # def login_from_website(self, request):
-    #     pass
-
-    # def login_from_QRcode(self, request):
-    #     pass
-
-    # # 从请求中获取用户信息
-    # def get_user_info(self, request):
-    #     pass
-
-    # # 修改用户信息
-    # def modify_user_info(self, request):
-    #     pass
-
-    # # # 删除用户 (这个暂时可以不用实现/仅在测试时使用)
-    # # def delete_user(self, request):
-    # #     pass
-    # def get_admin_list(self, request):
-    #     pass
-
-    # # 从网站注册账号
-    # def register_from_website(self, request):
-    #     pass
-
