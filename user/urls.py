@@ -6,7 +6,7 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from .views import LoginOrRegisterWechat,LoginTest,UserInfo
+from .views import LoginOrRegisterWechat,LoginTest,UserInfo, AdminList, ChangePermission
 
 urlpatterns = [
     # path('register', UserRegisterWechat.as_view(), name='register'),
@@ -15,4 +15,6 @@ urlpatterns = [
     path("login",LoginOrRegisterWechat.as_view(),name="login"),
     path('test', LoginTest.as_view(),name="login_test"),
     path('UserInfo', UserInfo.as_view(), name='info'),
+    path('Adminlist', AdminList.as_view(), name='admin_list'),
+    path('Changepermission', ChangePermission.as_view(), name='change_permission')
 ]

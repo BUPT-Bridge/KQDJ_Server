@@ -89,3 +89,41 @@ class LoginTest(APIView):
 - 首先在需要被校验的函数上添加`@method_decorator`
 - 在主函数中使用`request.openid`读取到解码之后的openid
 - 使用`@method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_USER]))`进行权限控制
+
+### 分页器调用规范
+<mark>注意：</mark>所有列表只要是`多个`请进行分页操作！
+
+- request的url示例: *http://localhost:8000/api/example?page=3&per_page=20*  主要是后面的查询参数
+- 以下代码为`user/view`的调用示例，即在查询集后面加上`.paginate(request)`
+```python
+admin_data = admin_queryset.order_by('-created_at').paginate(request)
+```
+- 如果是**单个用户**进行查询请使用查询集后加`.serialize()` 如以下示例
+```python 
+user_data = Users.query_manager.self_fliter(openid).serialize()
+```
+### 每个表单update函数开发和调用规范
+
+#### 开发规范
+<mark>请注意！</mark>我们都将update函数卸载模型类之下的函数
+
+- 如果修改集合为空，请采用`raise`抛出错误，这样才能在`CustomResponse`中正常返回
+- 返回最好是`Dict`类型，而且建议加上`message`字段，这样可以直接显示出信息，让代码更**简洁**
+```python 
+self.save()
+        updated_fields['message'] = '更新成功'
+        return updated_fields
+```
+- **注意** 图片类型最好单独处理
+- 每个模型的`utils.request_proceesor`要单独开发，每个模型不太一样
+
+#### 调用规范
+- 传入的data 需要经过`utils.request_proceesor`处理进行，将data进行规范化
+- 直接传入处理后的data，调用示例如下
+```python 
+def _adjust_admin_list(self, request, openid):
+  # 获取表单数据和文件
+  data = request_proceesor(request)
+  reply = Users.objects.get(openid=openid).update_user(data=data)
+  return reply  
+```

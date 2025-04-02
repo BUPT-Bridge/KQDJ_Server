@@ -4,6 +4,9 @@ from django.utils.decorators import method_decorator
 from utils.wx_login import wx_login
 from utils.response import CustomResponse
 from utils.auth import auth
+from .utils.constance import *
+from .utils.request_proceesor import request_proceesor
+from .utils.validate import VerificationCode
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
@@ -74,7 +77,55 @@ class UserInfo(APIView):
             raise Exception('用户不存在')
         user_data = Users.query_manager.self_fliter(openid).serialize()
         return user_data
+    
+class AdminList(APIView):
+    @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
+    def get(self, request):
+        return CustomResponse(self._get_admin_list, request)
+    
+    @method_decorator(auth.token_required)
+    def put(self, request):
+        openid = request.openid
+        return CustomResponse(self._adjust_admin_list, request, openid)
+    
+    def _get_admin_list(self, request):
+        # 获取管理员列表
+        admin_queryset = Users.query_manager.permission_fliter(ADMIN_USER)
+        if not admin_queryset.exists():
+            raise Exception('没有管理员')
+        admin_data = admin_queryset.order_by('-created_at').paginate(request)
+        return admin_data
 
+    def _adjust_admin_list(self, request, openid):
+        # 获取表单数据和文件
+        data = request_proceesor(request)
+        reply = Users.objects.get(openid=openid).update_user(data=data)
+        return reply
+    
+class ChangePermission(APIView):
+    
+    @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
+    def get(self, request):
+        return CustomResponse(self._generate_code)
+    
+    @method_decorator(auth.token_required(required_permission=[COMMON_USER]))
+    def post(self, request):
+        code = request.data.get('code')
+        openid = request.openid
+        return CustomResponse(self._verify_code, code, openid)
+        
+    def _generate_code(self):
+        verification = VerificationCode()
+        return verification.generate_code()
+    
+    def _verify_code(self, code, openid):
+        if not code:
+            raise Exception('用户不存在')
+        else:
+            verification = VerificationCode()
+            reply = verification.verify_code(code)
+        Users.query_manager.self_fliter(openid).update(permission_level=ADMIN_USER)
+        return reply
     # # 使用账号密码登录
     # def login_from_website(self, request):
     #     pass

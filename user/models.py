@@ -31,9 +31,45 @@ class Users(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     
+    def update_user(self, **kwargs):
+        """
+        处理表单提交的用户信息更新
+        :param kwargs: 包含以下字段：
+            - data: dict 表单数据，可能包含：
+                - username: str 用户名
+                - phone: str 手机号
+                - password: str 密码
+                - avatar: InMemoryUploadedFile 头像文件
+        :return: dict 更新结果
+        """
+        data = kwargs.get('data', {})
+        updated_fields = {}
+        
+        if data:
+            update_fields = {'username', 'phone', 'password', 'avatar'}
+            valid_fields = {field: value for field, value in data.items() 
+                          if field in update_fields and value}
+            print(valid_fields)
+            if not valid_fields:
+                raise ValueError("至少提供一个需要更新的字段")
+            
+            for field, value in valid_fields.items():
+                setattr(self, field, value)
+                # 对于文件字段，返回文件名而不是文件对象
+                if field == 'avatar':
+                    updated_fields[field] = value.name
+                else:
+                    updated_fields[field] = value
+        elif not data:
+            raise ValueError("没有提供任何需要更新的字段")            
+        self.save()
+        updated_fields['message'] = '更新成功'
+        return updated_fields
+
     class Meta:
         verbose_name = '用户'
         verbose_name_plural = '用户'
 
     def __str__(self):
-        return f"{self.username} (权限: {self.get_permission_level_display()})"
+        return f"{self.username} - {self.openid} - {self.phone} - {self.permission_level}"
+    

@@ -10,6 +10,7 @@ from .utils.sync_feedback_status import sync_feedback_status
 from .utils import *
 from utils.time_utils import set_timestamp  # 改为使用绝对导入
 
+
 # Create your models here.
 class MainForm(models.Model):
     # 通过自定义管理器，可以在查询时使用自定义的查询方法
@@ -17,34 +18,50 @@ class MainForm(models.Model):
     query_manager = MainFormManager()
 
     # 定义字段
-    upload_time = models.BigIntegerField(verbose_name='时间')
-    uuid = models.UUIDField(verbose_name='Form-UUID')
-    type = models.CharField(max_length=10, choices=FORM_TYPE_CHOICES, verbose_name='表单类型')
+    upload_time = models.BigIntegerField(verbose_name="时间")
+    uuid = models.UUIDField(verbose_name="Form-UUID")
+    type = models.CharField(
+        max_length=10, choices=FORM_TYPE_CHOICES, verbose_name="表单类型"
+    )
 
     # User 相关字段
-    phone = models.CharField(max_length=20, verbose_name='电话号码')
-    name = models.CharField(max_length=50, verbose_name='姓名')
-    address = models.TextField(verbose_name='地址')
-    title = models.CharField(max_length=100, verbose_name='标题')
-    content = models.TextField(verbose_name='内容')
-    feedback_need = models.BooleanField(default=False, verbose_name='是否需要回访')
-    audio = models.FileField(upload_to='audios/', null=True, blank=True, verbose_name='音频文件')
-    user_openid = models.CharField(max_length=100, verbose_name='用户OpenID')
-    
+    phone = models.CharField(max_length=20, verbose_name="电话号码")
+    name = models.CharField(max_length=50, verbose_name="姓名")
+    address = models.TextField(verbose_name="地址")
+    title = models.CharField(max_length=100, verbose_name="标题")
+    content = models.TextField(verbose_name="内容")
+    feedback_need = models.BooleanField(default=False, verbose_name="是否需要回访")
+    audio = models.FileField(
+        upload_to="audios/", null=True, blank=True, verbose_name="音频文件"
+    )
+    user_openid = models.CharField(max_length=100, verbose_name="用户OpenID")
+
     # Admin 相关字段
-    admin_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name='管理员电话')
-    admin_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='管理员姓名')
-    admin_way = models.CharField(max_length=50, null=True, blank=True, verbose_name='处理方式')
-    admin_content = models.TextField(null=True, blank=True, verbose_name='管理员处理内容')
-    admin_openid = models.CharField(max_length=100, verbose_name='管理员OpenID')
-    handle_time = models.BigIntegerField(null=True, blank=True, verbose_name='处理时间')
-    feedback_summary = models.TextField(null=True, blank=True, verbose_name='回访总结')
-    
+    admin_phone = models.CharField(
+        max_length=20, null=True, blank=True, verbose_name="管理员电话"
+    )
+    admin_name = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="管理员姓名"
+    )
+    admin_way = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="处理方式"
+    )
+    admin_content = models.TextField(
+        null=True, blank=True, verbose_name="管理员处理内容"
+    )
+    admin_openid = models.CharField(max_length=100, verbose_name="管理员OpenID")
+    handle_time = models.BigIntegerField(null=True, blank=True, verbose_name="处理时间")
+    feedback_summary = models.TextField(null=True, blank=True, verbose_name="回访总结")
+
     # 处理状态以及相关判断  提供了 get_handle_display() 方法来获取人类可读的值
-    handle = models.IntegerField(choices=HANDLE_STATUS_CHOICES, default=UNHANDLED, verbose_name='处理状态')
-    feedback_status = models.BooleanField(choices=IS_NEED_FEEDBACK_CHOICES, default=NEED_FEEDBACK, verbose_name='回访状态')
-    evaluation = models.IntegerField(null=True, blank=True, verbose_name='评价分数')
-    evaluation_or_not = models.BooleanField(default=False, verbose_name='是否已评价')
+    handle = models.IntegerField(
+        choices=HANDLE_STATUS_CHOICES, default=UNHANDLED, verbose_name="处理状态"
+    )
+    feedback_status = models.BooleanField(
+        choices=IS_NEED_FEEDBACK_CHOICES, default=NEED_FEEDBACK, verbose_name="回访状态"
+    )
+    evaluation = models.IntegerField(null=True, blank=True, verbose_name="评价分数")
+    evaluation_or_not = models.BooleanField(default=False, verbose_name="是否已评价")
 
     # 保存同时需要同步更改的数据
     def save(self, *args, **kwargs):
@@ -55,79 +72,133 @@ class MainForm(models.Model):
         else:
             self.handle_time = int(time.time())
         super().save(*args, **kwargs)
-    
+
     # 添加辅助方法，将 Unix 时间戳转换回 datetime 对象
     def get_datetime(self):
         return datetime.fromtimestamp(self.upload_time)
 
     def update_form(self, **kwargs):
         """
-        :param kwargs: 可包含以下字段：
-            - admin_info: dict 管理员信息
+        :param kwargs: 可包含以下字段（每次调用只能包含其中一个）：
+            - handle_info: dict 管理员处理信息
             - feedback_info: dict 回访信息
             - evaluation_info: dict 评价信息
         :return: bool 更新是否成功
+        :raises ValueError: 当没有提供任何更新信息或提供了多个更新信息时
         """
-        try:
-            # 更新管理员信息
-            admin_info = kwargs.get('handle_info', {})
-            if admin_info:
-                self.admin_phone = admin_info.get('phone', self.admin_phone)
-                self.admin_name = admin_info.get('name', self.admin_name)
-                self.admin_way = admin_info.get('way', self.admin_way)
-                self.admin_content = admin_info.get('content', self.admin_content)
-                self.admin_openid = admin_info.get('openid', self.admin_openid)
-                if self.feedback_status == NOT_NEED_FEEDBACK:
-                    self.handle = HANDLED
-                else :
-                    self.handle = PROCESSING
+        # 检查传入的更新类型数量
+        update_types = [
+            bool(kwargs.get("handle_info")),
+            bool(kwargs.get("feedback_info")),
+            bool(kwargs.get("evaluation_info")),
+        ]
+        if sum(update_types) == 0:
+            raise ValueError("必须提供一个更新信息")
+        if sum(update_types) > 1:
+            raise ValueError("每次只能提供一种类型的更新信息")
 
-            # 更新回访信息
-            feedback_info = kwargs.get('feedback_info', {})
-            if feedback_info:
-                self.feedback_status = NEED_FEEDBACK_DONE
+        # 更新管理员信息
+        handle_info = kwargs.get("handle_info", {})
+        if handle_info:
+            self.admin_phone = handle_info.get("phone", self.admin_phone)
+            self.admin_name = handle_info.get("name", self.admin_name)
+            self.admin_way = handle_info.get("way", self.admin_way)
+            self.admin_content = handle_info.get("content", self.admin_content)
+            self.admin_openid = handle_info.get("openid", self.admin_openid)
+            if self.feedback_status == NOT_NEED_FEEDBACK:
                 self.handle = HANDLED
-                self.feedback_summary = feedback_info.get('feedback_summary', self.feedback_summary)
+            else:
+                self.handle = PROCESSING
 
-            # 更新评价信息
-            evaluation_info = kwargs.get('evaluation_info', {})
-            if evaluation_info:
-                self.evaluation = evaluation_info.get('evaluation')
-                self.evaluation_or_not = True
+        # 更新回访信息
+        feedback_info = kwargs.get("feedback_info", {})
+        if feedback_info:
+            self.feedback_status = NEED_FEEDBACK_DONE
+            self.handle = HANDLED
+            self.feedback_summary = feedback_info.get(
+                "feedback_summary", self.feedback_summary
+            )
 
-            self.save()
-            return True
-        except Exception as e:
-            print(f"更新失败: {str(e)}")
-            return False
-    
+        # 更新评价信息
+        evaluation_info = kwargs.get("evaluation_info", {})
+        if evaluation_info:
+            self.evaluation = evaluation_info.get("evaluation")
+            self.evaluation_or_not = True
+
+        self.save()
+        return True
+
     def __str__(self):
         return f"表单 {self.uuid} - {self.name} - {self.get_handle_display()}"
-    
+
     class Meta:
-        verbose_name = '表单'
-        verbose_name_plural = '表单'
+        verbose_name = "表单"
+        verbose_name_plural = "表单"
 
 
 class ImageModel(models.Model):
     # 可以通过 related_name 参数指定反向查询的名称，可以通过main_form_instance.images.all() 来获取所有与该 MainForm 实例关联的 ImageModel 实例。
-    main_form = models.ForeignKey(MainForm, on_delete=models.CASCADE, related_name='images', verbose_name='关联表单')
-    image = ProcessedImageField(upload_to=get_image_path,
-                                           format='WEBP',
-                                           options={'quality': 40})
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='user', verbose_name='来源')
-    upload_time = models.BigIntegerField(verbose_name='上传时间')
+    main_form = models.ForeignKey(
+        MainForm,
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="关联表单",
+    )
+    image = ProcessedImageField(
+        upload_to=get_image_path, format="WEBP", options={"quality": 40}
+    )
+    source = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default="user", verbose_name="来源"
+    )
+    upload_time = models.BigIntegerField(verbose_name="上传时间")
 
     def save(self, *args, **kwargs):
         set_timestamp(self)
         super().save(*args, **kwargs)
-    
+
     def get_datetime(self):
         return datetime.fromtimestamp(self.upload_time)
 
     def __str__(self):
         return f"从该表单：{self.main_form.uuid} 获取图片, 图片：{self.image}"
-    
+
     class Meta:
-        verbose_name = '表单图片'
-        verbose_name_plural = '表单图片'
+        verbose_name = "表单图片"
+        verbose_name_plural = "表单图片"
+
+
+# def update_form(self, **kwargs):
+#     """
+#     :param kwargs: 可包含以下字段：
+#         - admin_info: dict 管理员信息
+#         - feedback_info: dict 回访信息
+#         - evaluation_info: dict 评价信息
+#     :return: bool 更新是否成功
+#     """
+#         # 更新管理员信息
+#     admin_info = kwargs.get('handle_info', {})
+#     if admin_info:
+#         self.admin_phone = admin_info.get('phone', self.admin_phone)
+#         self.admin_name = admin_info.get('name', self.admin_name)
+#         self.admin_way = admin_info.get('way', self.admin_way)
+#         self.admin_content = admin_info.get('content', self.admin_content)
+#         self.admin_openid = admin_info.get('openid', self.admin_openid)
+#         if self.feedback_status == NOT_NEED_FEEDBACK:
+#             self.handle = HANDLED
+#         else :
+#             self.handle = PROCESSING
+
+#         # 更新回访信息
+#     feedback_info = kwargs.get('feedback_info', {})
+#     if feedback_info:
+#         self.feedback_status = NEED_FEEDBACK_DONE
+#         self.handle = HANDLED
+#         self.feedback_summary = feedback_info.get('feedback_summary', self.feedback_summary)
+
+#         # 更新评价信息
+#     evaluation_info = kwargs.get('evaluation_info', {})
+#     if evaluation_info:
+#         self.evaluation = evaluation_info.get('evaluation')
+#         self.evaluation_or_not = True
+#     self.save()
+#     return True
