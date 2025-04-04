@@ -15,7 +15,7 @@ class WarmNoticeFunctions(APIView):
         # 获取请求数据
         return CustomResponse(self._get_warm_notice)
         
-    @method_decorator(auth.token_required(required_permission=[COMMON_USER,SUPER_ADMIN_USER]))
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
     def put(self,request):
         return CustomResponse(self._update_warm_notice,request)
 
@@ -82,8 +82,33 @@ class CommunityTele(APIView):
 
 # 访问量获取
 class VisitCountFunctions(APIView):
-    def get_visit_count(self,request):
-        pass
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def get(self,request):
+        # 获取请求数据
+        return CustomResponse(self._get_visit_count)
 
-    def update_visit_count(self,request):
-        pass    
+    @method_decorator(auth.token_required(required_permission=[COMMON_USER,ADMIN_USER,SUPER_ADMIN_USER]))
+    def put(self,request):
+        # 获取请求数据
+        return CustomResponse(self._update_visit_count)
+    
+    def _get_visit_count(self) -> dict:
+        page_view = PageView.objects.first()
+        if page_view:
+            return {
+                'message': '获取访问量成功',
+                'data': page_view.view_count
+            }
+
+    def _update_visit_count(self)-> dict:
+        # 处理请求数据
+        page_view = PageView.objects.first()
+        if page_view:
+            page_view.view_count += 1
+            page_view.save()
+        else:
+            PageView.objects.create(view_count=1)
+        return {
+            'message': '访问量更新成功'
+        }
+        
