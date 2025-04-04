@@ -9,5 +9,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    
+    path('warm_notice', views.WarmNoticeFunctions.as_view(), name='warm_notice'),
 ]

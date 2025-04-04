@@ -1,7 +1,7 @@
 from django.db import models
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-from .utils.constance import *
+from utils.constance import *
 from .utils.rename import avatar_upload_path
 from .manager import UsersManager
 

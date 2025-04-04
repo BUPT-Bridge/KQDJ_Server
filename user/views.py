@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from utils.wx_login import wx_login
 from utils.response import CustomResponse
 from utils.auth import auth
-from .utils.constance import *
+from utils.constance import *
 from .utils.request_proceesor import request_proceesor
 from .utils.validate import VerificationCode
 

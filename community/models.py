@@ -19,16 +19,14 @@ class Banner(models.Model):
 
 class Notice(models.Model):
     """温馨提示模型"""
-    title = models.CharField(max_length=500, verbose_name='标题')
-    content = models.TextField(verbose_name='内容')
+    content = models.TextField(verbose_name='内容', blank=True, null=True)
 
     class Meta:
         verbose_name = '温馨提示'
         verbose_name_plural = '温馨提示'
 
     def __str__(self):
-        return self.title
-
+        return self.content[:20]
 
 class Cover(models.Model):
     """封面图模型"""

@@ -1,7 +1,9 @@
-from django.shortcuts import render
-
 from rest_framework.views import APIView
-
+from utils.response import CustomResponse
+from django.utils.decorators import method_decorator
+from utils.auth import auth
+from utils.constance import *
+from .models import Banner,Notice, Cover, PageView
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
@@ -9,11 +11,31 @@ from rest_framework.views import APIView
 
 # 社区温馨提示
 class WarmNoticeFunctions(APIView):
-    def get_warm_notice(self,request):
-        pass
+    def get(self,request):
+        # 获取请求数据
+        return CustomResponse(self._get_warm_notice)
+        
+    @method_decorator(auth.token_required(required_permission=[COMMON_USER,SUPER_ADMIN_USER]))
+    def put(self,request):
+        return CustomResponse(self._update_warm_notice,request)
+
+    def _get_warm_notice(self) -> dict:
+        # 处理请求数据
+        notice = Notice.objects.first()
+        return {
+            'message': '获取温馨提示成功',
+            'data': notice.content if notice else '暂无温馨提示'
+        }
     
-    def update_warm_notice(self,request):
-        pass
+    def _update_warm_notice(self,request) -> dict:
+        data = request.data
+        notice = data['notice']
+        Notice.objects.all().delete()
+        Notice.objects.create(content=notice)
+        return {
+            'message': '更新温馨提示成功',
+            'data': notice
+        }
 
 # 管理端封面
 class CoverFunctions(APIView):
