@@ -1,4 +1,4 @@
 from django.contrib import admin
-from .models import Banner,Notice,Cover,PageView
+from .models import Banners,Notice,Cover,PageView,PhoneNumber
 # Register your models here.
-admin.site.register([Banner,Notice,Cover,PageView])
+admin.site.register([Banners,Notice,Cover,PageView,PhoneNumber])

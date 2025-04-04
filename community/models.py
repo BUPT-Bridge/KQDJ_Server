@@ -2,16 +2,13 @@ from django.db import models
 
 # Create your models here.
 
-class Banner(models.Model):
+class Banners(models.Model):
     """轮播图模型"""
-    title = models.CharField(max_length=100, verbose_name='标题')
-    image = models.ImageField(upload_to='banners/', verbose_name='轮播图片')
-    index = models.IntegerField(default=0, verbose_name='排序')
+    image = models.ImageField(upload_to='media/banners/', verbose_name='轮播图片')
 
     class Meta:
         verbose_name = '轮播图'
         verbose_name_plural = '轮播图'
-        ordering = ['index']
 
     def __str__(self):
         return self.title
@@ -30,9 +27,7 @@ class Notice(models.Model):
 
 class Cover(models.Model):
     """封面图模型"""
-    title = models.CharField(max_length=100, verbose_name='标题')
-    image = models.ImageField(upload_to='covers/', verbose_name='封面图片')
-    description = models.TextField(blank=True, verbose_name='描述')
+    image = models.ImageField(upload_to='media/covers/', verbose_name='封面图片')
 
     class Meta:
         verbose_name = '封面图'
@@ -51,3 +46,15 @@ class PageView(models.Model):
 
     def __str__(self):
         return self.page
+    
+class PhoneNumber(models.Model):
+    """手机号模型"""
+    phone_name = models.CharField(max_length=20, unique=True, verbose_name='姓名')
+    phone_number = models.CharField(max_length=20, unique=True, verbose_name='手机号')
+
+    class Meta:
+        verbose_name = '手机号'
+        verbose_name_plural = '手机号'
+
+    def __str__(self):
+        return self.phone_number

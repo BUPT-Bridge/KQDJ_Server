@@ -11,4 +11,5 @@ from . import views
 urlpatterns = [
     path('warm_notice', views.WarmNoticeFunctions.as_view(), name='warm_notice'),
     path('visit_count', views.VisitCountFunctions.as_view(), name='visit_count'),
+    path('phone_number', views.CommunityTele.as_view(), name='phone_number'),
 ]

@@ -3,7 +3,7 @@ from utils.response import CustomResponse
 from django.utils.decorators import method_decorator
 from utils.auth import auth
 from utils.constance import *
-from .models import Banner,Notice, Cover, PageView
+from .models import Banners,Notice, Cover, PageView,PhoneNumber
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
@@ -74,11 +74,51 @@ class TweetShowFunctions(APIView):
 
 # 社区电话
 class CommunityTele(APIView):
-    def get_tele(self,request):
-        pass
-
-    def update_tele(self,request):
-        pass
+    # 获取请求数据
+    def get(self,request):
+        return CustomResponse(self._get_tele)
+    def _get_tele(self):
+        phone = PhoneNumber.objects.all()
+        return {
+            'message': '获取社区电话成功',
+            'data': [i for i in phone.values('phone_name','phone_number')]
+        }
+    # 添加社区电话
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def post(self,request):
+        return CustomResponse(self._add_tele,request)
+    def _add_tele(self,request):
+        data = request.data
+        phone_name = data['phone_name']
+        phone_number = data['phone_number']
+        PhoneNumber.objects.create(phone_name=phone_name,phone_number=phone_number)
+        return {
+            'message': '添加社区电话成功'
+        }
+    
+    # 删除社区电话
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def delete(self,request):
+        return CustomResponse(self._delete_tele,request)
+    def _delete_tele(self,request):
+        data = request.data
+        phone_number = data['phone_number']
+        PhoneNumber.objects.filter(phone_number=phone_number).delete()
+        return {
+            'message': '删除社区电话成功'
+        }
+    
+    def put(self,request):
+        # 更新社区电话
+        return CustomResponse(self._update_tele,request)
+    def _update_tele(self,request):
+        data = request.data
+        phone_name = data['phone_name']
+        phone_number = data['phone_number']
+        PhoneNumber.objects.filter(phone_number=phone_number).update(phone_name=phone_name)
+        return {
+            'message': '更新社区电话成功'
+        }
 
 # 访问量获取
 class VisitCountFunctions(APIView):
