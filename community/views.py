@@ -44,6 +44,9 @@ class CoverFunctions(APIView):
     
     def update_cover(self,request):
         pass
+    
+    def delete_cover(self,request):
+        pass
 
 # 管理端轮播图
 class BanerFunctions(APIView):

@@ -5,8 +5,8 @@ from utils.constance import *
 from .utils.rename import avatar_upload_path
 from .manager import UsersManager
 
-GLOABL_AVATAR_WIDTH = 120
-GLOABL_AVATAR_HEIGHT = 120
+_AVATAR_WIDTH = 120
+_AVATAR_HEIGHT = 120
 
 # Create your models here.
 class Users(models.Model):
@@ -18,7 +18,7 @@ class Users(models.Model):
     password = models.CharField(max_length=50, verbose_name='密码', blank=True, null=True)
     phone = models.CharField(max_length=20, verbose_name='手机号', blank=True, null=True)
     avatar = ProcessedImageField(upload_to=avatar_upload_path,
-                                           processors=[ResizeToFill(GLOABL_AVATAR_WIDTH, GLOABL_AVATAR_HEIGHT)],
+                                           processors=[ResizeToFill(_AVATAR_WIDTH, _AVATAR_HEIGHT)],
                                            format='WEBP',
                                            options={'quality': 100}, blank=True, null=True,
                                            verbose_name='头像')
