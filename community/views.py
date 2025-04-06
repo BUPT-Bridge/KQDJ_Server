@@ -4,6 +4,7 @@ from django.utils.decorators import method_decorator
 from utils.auth import auth
 from utils.constance import *
 from .models import Banners,Notice, Cover, PageView,PhoneNumber
+from .utils.limit import xianxing
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
@@ -23,8 +24,7 @@ class WarmNoticeFunctions(APIView):
         # 处理请求数据
         notice = Notice.objects.first()
         return {
-            'message': '获取温馨提示成功',
-            'data': notice.content if notice else '暂无温馨提示'
+            'notice': notice.content if notice else '暂无温馨提示'
         }
     
     def _update_warm_notice(self,request) -> dict:
@@ -33,8 +33,7 @@ class WarmNoticeFunctions(APIView):
         Notice.objects.all().delete()
         Notice.objects.create(content=notice)
         return {
-            'message': '更新温馨提示成功',
-            'data': notice
+            'notice': notice
         }
 
 # 管理端封面
@@ -43,6 +42,9 @@ class CoverFunctions(APIView):
         pass
     
     def update_cover(self,request):
+        pass
+    
+    def delete_cover(self,request):
         pass
 
 # 管理端轮播图
@@ -57,9 +59,17 @@ class BanerFunctions(APIView):
         pass
 
 # 获取限行信息
-class LimitFunctions(APIView):
-    def get_limit(self,request):
-        pass
+class CarLimitFunctions(APIView):
+    # 获取请求数据
+    def get(self,request):
+        # 获取请求数据
+        return CustomResponse(self._get_limit)
+    def _get_limit(self):
+        today,tomorrow = xianxing()
+        return {
+            'today_limit': today,
+            'tomorrow_limit': tomorrow
+        }
 
 # 发布社区风采
 class TweetShowFunctions(APIView):
@@ -79,10 +89,7 @@ class CommunityTele(APIView):
         return CustomResponse(self._get_tele)
     def _get_tele(self):
         phone = PhoneNumber.objects.all()
-        return {
-            'message': '获取社区电话成功',
-            'data': [i for i in phone.values('phone_name','phone_number')]
-        }
+        return [i for i in phone.values('phone_name','phone_number')]
     # 添加社区电话
     @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
     def post(self,request):
@@ -136,8 +143,7 @@ class VisitCountFunctions(APIView):
         page_view = PageView.objects.first()
         if page_view:
             return {
-                'message': '获取访问量成功',
-                'data': page_view.view_count
+                'view_count': page_view.view_count
             }
 
     def _update_visit_count(self)-> dict:
