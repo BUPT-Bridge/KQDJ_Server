@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-def get_wx_article_content(url: str) -> str:
+def get_wx_article_content(url: str) -> tuple:
     """
     获取微信文章内容并处理
 
@@ -50,8 +50,7 @@ def get_wx_article_content(url: str) -> str:
         "https://images.weserv.nl/?url=https://mmbiz.qpic.cn",
         html_template,
     )
-
-    return {"title": title, "content": html_template}
+    return  title, html_template
 
 
 if __name__ == "__main__":
