@@ -104,7 +104,7 @@ class TweetShowFunctions(APIView):
 # 社区电话
 class CommunityTele(APIView):
     # 获取请求数据
-    def get(self,request,):
+    def get(self,request):
         return CustomResponse(self._get_tele)
     def _get_tele(self):
         return PhoneNumber.query_manager.get_phone_number()

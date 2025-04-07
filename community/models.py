@@ -96,3 +96,15 @@ class PhoneNumber(models.Model):
 
     def __str__(self):
         return self.phone_number
+
+class TweetPage(models.Model):
+    # 社区风采模型
+    title = models.CharField(max_length=100, verbose_name='标题')
+    content = models.TextField(verbose_name='内容')
+
+    class Meta:
+        verbose_name = '社区风采'
+        verbose_name_plural = '社区风采'
+
+    def __str__(self):
+        return self.title
