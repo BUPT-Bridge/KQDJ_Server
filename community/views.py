@@ -36,27 +36,46 @@ class WarmNoticeFunctions(APIView):
             'notice': notice
         }
 
-# 管理端封面
+# 管理端封面 这个封面只有获取和修改
 class CoverFunctions(APIView):
-    def get_cover(self,request):
-        pass
+    def get(self,request):
+        return CustomResponse(self._get_cover)
     
-    def update_cover(self,request):
-        pass
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def post(self,request):
+        return CustomResponse(self._update_cover, request)
     
-    def delete_cover(self,request):
-        pass
+    def _get_cover(self):
+        return Cover.query_manager.get_cover()
+
+    def _update_cover(self, request) -> dict:
+        cover_image = request.FILES.get('cover')
+        if not cover_image:
+            raise ValueError("没有提供封面图片")
+        return Cover.update_cover(cover_image)
 
 # 管理端轮播图
 class BanerFunctions(APIView):
-    def get_all_banners(self,request):
-        pass
+    def get(self,request):
+        return CustomResponse(self._get_banner)
     
-    def add_a_banner(self,request):
-        pass
+    def _get_banner(self):
+        return Banners.query_manager.get_banners()
+
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def post(self, request):
+        return CustomResponse(self._add_banner, request)
+
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
+    def delete(self,request):
+        return CustomResponse(self._delete_banner, request)
     
-    def delete_a_banner(self,request):
-        pass
+    def _delete_banner(self, request) -> dict:
+        pk = request.GET.get('pk')
+        return Banners.query_manager.delete_banner(pk)
+
+    def _add_banner(self, request) -> dict:
+        return Banners.query_manager.create_banner(request)
 
 # 获取限行信息
 class CarLimitFunctions(APIView):
@@ -85,48 +104,39 @@ class TweetShowFunctions(APIView):
 # 社区电话
 class CommunityTele(APIView):
     # 获取请求数据
-    def get(self,request):
+    def get(self,request,):
         return CustomResponse(self._get_tele)
     def _get_tele(self):
-        phone = PhoneNumber.objects.all()
-        return [i for i in phone.values('phone_name','phone_number')]
+        return PhoneNumber.query_manager.get_phone_number()
+    
     # 添加社区电话
     @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
     def post(self,request):
         return CustomResponse(self._add_tele,request)
     def _add_tele(self,request):
-        data = request.data
-        phone_name = data['phone_name']
-        phone_number = data['phone_number']
-        PhoneNumber.objects.create(phone_name=phone_name,phone_number=phone_number)
-        return {
-            'message': '添加社区电话成功'
-        }
+        return PhoneNumber.query_manager.update_phone_number(
+        phone_name=request.data['phone_name'],
+        phone_number=request.data['phone_number']
+    )
     
     # 删除社区电话
     @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
     def delete(self,request):
         return CustomResponse(self._delete_tele,request)
     def _delete_tele(self,request):
-        data = request.data
-        phone_number = data['phone_number']
-        PhoneNumber.objects.filter(phone_number=phone_number).delete()
-        return {
-            'message': '删除社区电话成功'
-        }
+        pk = request.GET.get('pk')
+        return PhoneNumber.query_manager.delete_phone_number(pk)
     
     def put(self,request):
         # 更新社区电话
         return CustomResponse(self._update_tele,request)
     def _update_tele(self,request):
-        data = request.data
-        phone_name = data['phone_name']
-        phone_number = data['phone_number']
-        PhoneNumber.objects.filter(phone_number=phone_number).update(phone_name=phone_name)
-        return {
-            'message': '更新社区电话成功'
-        }
-
+        pk = request.GET.get('pk')
+        return PhoneNumber.query_manager.update_phone_number(
+        phone_name=request.data['phone_name'],
+        phone_number=request.data['phone_number'],
+        pk=pk
+    )
 # 访问量获取
 class VisitCountFunctions(APIView):
     @method_decorator(auth.token_required(required_permission=[ADMIN_USER,SUPER_ADMIN_USER]))
@@ -157,4 +167,3 @@ class VisitCountFunctions(APIView):
         return {
             'message': '访问量更新成功'
         }
-        

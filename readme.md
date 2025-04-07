@@ -127,3 +127,9 @@ def _adjust_admin_list(self, request, openid):
   reply = Users.objects.get(openid=openid).update_user(data=data)
   return reply  
 ```
+
+### 传入pk值调用规范
+**有一些需要修改和删除需要附上图片的pk主键值**
+- 在`DELETE`轮播图时候规范如下：*http://<<BASE_URL>>/api/community/banners?pk=9*
+- 在**Phone**部分的`DELETE`和`PUT`请求下都需要加入url传参部分，示例如下：
+*http://<<BASE_URL>>/api/community/phone_number?pk=2* 

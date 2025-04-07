@@ -13,4 +13,6 @@ urlpatterns = [
     path('visit_count', views.VisitCountFunctions.as_view(), name='visit_count'),
     path('phone_number', views.CommunityTele.as_view(), name='phone_number'),
     path('car_limit', views.CarLimitFunctions.as_view(), name='car_limit'),
+    path('banners', views.BanerFunctions.as_view(), name='banner'),
+    path('cover', views.CoverFunctions.as_view(), name='cover')
 ]
