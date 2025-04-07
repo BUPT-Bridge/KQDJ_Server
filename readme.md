@@ -108,12 +108,7 @@ user_data = Users.query_manager.self_fliter(openid).serialize()
 <mark>请注意！</mark>我们都将update函数卸载模型类之下的函数
 
 - 如果修改集合为空，请采用`raise`抛出错误，这样才能在`CustomResponse`中正常返回
-- 返回最好是`Dict`类型，而且建议加上`message`字段，这样可以直接显示出信息，让代码更**简洁**
-```python 
-self.save()
-        updated_fields['message'] = '更新成功'
-        return updated_fields
-```
+- 返回最好是`Dict`类型，而且在一切正常情况下不必加上`message`字段，这样可以让代码更**简洁**
 - **注意** 图片类型最好单独处理
 - 每个模型的`utils.request_proceesor`要单独开发，每个模型不太一样
 

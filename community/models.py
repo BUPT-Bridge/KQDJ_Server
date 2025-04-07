@@ -1,7 +1,7 @@
 from django.db import models
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-from .manager import BannerManager, CoverManager, PhoneNumberManager
+from .manager import BannerManager, CoverManager, PhoneNumberManager, TweetPageManager
 from .utils.rename import cover_upload_path, banner_upload_path
 from .utils.constance import *
 
@@ -96,3 +96,19 @@ class PhoneNumber(models.Model):
 
     def __str__(self):
         return self.phone_number
+
+class TweetPage(models.Model):
+    # 社区风采模型
+    objects = models.Manager()
+    query_manager = TweetPageManager()
+
+
+    title = models.CharField(max_length=100, verbose_name='标题')
+    content = models.TextField(verbose_name='内容')
+
+    class Meta:
+        verbose_name = '社区风采'
+        verbose_name_plural = '社区风采'
+
+    def __str__(self):
+        return self.title

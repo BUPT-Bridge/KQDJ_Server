@@ -9,6 +9,7 @@
 import os
 from django.db import models
 from django.conf import settings
+from django.core.paginator import Paginator
 
 class BannerManager(models.Manager):
 
@@ -131,3 +132,55 @@ class PhoneNumberManager(models.Manager):
         obj = self.get(pk=pk)
         obj.delete()
         return {"message": "手机号删除成功"}
+
+class TweetQuerySet(models.QuerySet):
+    def serialize(self) -> dict:
+        """
+        序列化当前查询集
+        """
+        from .serializers import TweetSerializer
+        return TweetSerializer(self, many=True).data
+
+    def paginate(self, request) -> dict:
+        """QuerySet的分页方法"""
+        return TweetPageManager().paginate(request, self)
+
+
+class TweetPageManager(models.Manager):
+    def get_queryset(self):
+        return TweetQuerySet(self.model, using=self._db).order_by('-id')
+
+    def paginate(self, request, queryset=None):
+        """
+        分页方法
+        :param request: HTTP请求对象
+        :param queryset: 可选的查询集，默认使用self
+        :return: dict 包含分页数据和元数据
+        """
+        queryset = queryset or self.get_queryset()
+        
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+
+        paginator = Paginator(queryset, page_size)
+        current_page = paginator.get_page(page)
+
+        from .serializers import TweetSerializer
+        return {
+            'total': paginator.count,
+            'total_pages': paginator.num_pages,
+            'current_page': page,
+            'page_size': page_size,
+            'results': TweetSerializer(current_page.object_list, many=True).data
+        }
+
+    def get_tweet_list(self, request):
+        """获取推文列表"""
+        tweets = self.get_queryset().all().order_by('-id')
+        return self.paginate(request, tweets)
+    
+    def delete_tweet(self, pk: int) -> dict:
+        """删除指定推文"""
+        obj = self.get(pk=pk)
+        obj.delete()
+        return {"message": "推文删除成功"}
