@@ -155,9 +155,7 @@ update_types = [
 评价更新接口发送规范：
 ```json
 {
-  "evaluation_info": {
-    "evaluation": "需要评价的数字"
-  }
+  "evaluation_info": "需要评价的数字"
 }
 ```
 - "evaluation": "需要评价的数字",为int类型

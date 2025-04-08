@@ -128,7 +128,8 @@ class MainForm(models.Model):
         # 更新评价信息
         evaluation_info = kwargs.get("evaluation_info", {})
         if evaluation_info:
-            self.evaluation = evaluation_info.get("evaluation")
+            self.evaluation = evaluation_info["evaluation_info"]
+            print(self.evaluation)
             self.evaluation_or_not = True
 
         self.save()
