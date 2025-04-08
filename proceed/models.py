@@ -5,9 +5,10 @@ from .manager import MainFormManager
 import time
 from .utils.path_processor import get_image_path
 from .utils.choice import *
-from .utils.uuid import generate_custom_uuid
+from .utils.generate_uuid import generate_custom_uuid
 from .utils.sync_feedback_status import sync_feedback_status
 from .utils import *
+import uuid
 from utils.time_utils import set_timestamp  # 改为使用绝对导入
 
 
@@ -19,16 +20,22 @@ class MainForm(models.Model):
 
     # 定义字段
     upload_time = models.BigIntegerField(verbose_name="时间")
-    uuid = models.UUIDField(verbose_name="Form-UUID")
+    uuidx = models.UUIDField(verbose_name="表单UUID",default=uuid.uuid4,editable=False)
     type = models.CharField(
-        max_length=10, choices=FORM_TYPE_CHOICES, verbose_name="表单类型"
+        max_length=10, choices=FORM_TYPE_CHOICES, null=True, blank=True, verbose_name="表单类型"
+    )
+    serial_number = models.CharField(
+        max_length=20, unique=True, null=True, blank=True, verbose_name="表单序号"
+    )
+    catagory = models.CharField(
+        max_length=10, choices=CATEGORY_CHOICES, verbose_name="表单分类",null=True, blank=True
     )
 
     # User 相关字段
     phone = models.CharField(max_length=20, verbose_name="电话号码")
     name = models.CharField(max_length=50, verbose_name="姓名")
     address = models.TextField(verbose_name="地址")
-    title = models.CharField(max_length=100, verbose_name="标题")
+    title = models.CharField(max_length=100, null=True, blank=True, verbose_name="标题")
     content = models.TextField(verbose_name="内容")
     feedback_need = models.BooleanField(default=False, verbose_name="是否需要回访")
     audio = models.FileField(
@@ -66,10 +73,9 @@ class MainForm(models.Model):
     # 保存同时需要同步更改的数据
     def save(self, *args, **kwargs):
         if self.pk is None:  # 只在首次创建时执行
-            generate_custom_uuid(self)
             set_timestamp(self)
             sync_feedback_status(self)
-        else:
+        elif self.serial_number:
             self.handle_time = int(time.time())
         super().save(*args, **kwargs)
 
@@ -129,7 +135,7 @@ class MainForm(models.Model):
         return True
 
     def __str__(self):
-        return f"表单 {self.uuid} - {self.name} - {self.get_handle_display()}"
+        return f"表单 {self.uuidx} - {self.name} - {self.get_handle_display()}"
 
     class Meta:
         verbose_name = "表单"
@@ -160,7 +166,7 @@ class ImageModel(models.Model):
         return datetime.fromtimestamp(self.upload_time)
 
     def __str__(self):
-        return f"从该表单：{self.main_form.uuid} 获取图片, 图片：{self.image}"
+        return f"从该表单：{self.main_form.uuidx} 获取图片, 图片：{self.image}"
 
     class Meta:
         verbose_name = "表单图片"

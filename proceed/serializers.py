@@ -22,4 +22,4 @@ class MainFormSerializerSimple(serializers.ModelSerializer):
 
     class Meta:
         model = MainForm
-        fields = ['uuid', 'type', 'title', 'upload_time']
+        fields = ['uuidx', 'type', 'title', 'upload_time']

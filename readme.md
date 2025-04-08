@@ -3,14 +3,19 @@
 ## Before Working
 
 ### 数据迁移与启动命令
-1. 执行以下命令
+1. 安装相应依赖
+```cmd
+pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
+```
+
+2. 执行以下命令
 ```cmd
 python manage.py makemigrations user proceed community analysis
 
 python manage.py migrate
 ```
 
-2. 直接运行服务
+3. 直接运行服务
 
 ```cmd
 python manage.py runserver 

@@ -13,3 +13,14 @@ def CustomResponse(function: Callable[..., Dict[str, Any]], *args, **kwargs):
         return Response({'data':data,'code':200,'message':'success'})
     except Exception as e:
         return Response({'code': 400, 'message': f"出现错误：{e}"})
+    
+from typing import Any, Callable, Dict
+
+class CustomResponseSync(Response):
+    def __init__(self, data=None, message="success", status=200, **kwargs):
+        response_data = {
+            "message": message,
+            "data": data
+        }
+        response_data.update(kwargs)
+        super().__init__(data=response_data, status=status)
