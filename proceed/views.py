@@ -16,7 +16,7 @@ class UserFormFunctions(APIView):
     parser_classes = (MultiPartParser,)
     
     @method_decorator(auth.token_required)
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         # 使用同步方式调用异步方法
         async def _async_post():
             permission_level = request.permission_level
