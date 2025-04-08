@@ -1,19 +1,46 @@
-from django.shortcuts import render
-
+from utils.auth import auth
+from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
+from utils.response import CustomResponse, CustomResponseSync
+from .models import MainForm
+import asyncio
+from rest_framework.decorators import api_view
+from rest_framework.parsers import MultiPartParser
+
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
 # 其他字段可以根据需要自行添加
 # 建议所有接口数据通过Body返回
 class UserFormFunctions(APIView):
-    # 用户提交表单
-    def handle_form(self,request):
-        pass
+    parser_classes = (MultiPartParser,)
     
+    @method_decorator(auth.token_required)
+    def post(self, request, *args, **kwargs):
+        # 使用同步方式调用异步方法
+        async def _async_post():
+            permission_level = request.permission_level
+            user_openid = request.openid
+            form_data = request.data
+            form_images = request.FILES.getlist('form_images')
+            source = 'user' if permission_level == 0 else 'admin'
+            
+            form = await self._create_form(form_data, form_images, source, user_openid=user_openid)
+            return CustomResponseSync(data=form, message="表单创建成功")
+        
+        # 使用 sync_to_async 运行异步代码
+        return asyncio.run(_async_post())
+
+    async def _create_form(self, form_data, images=None, source="user", user_openid=None):
+        # 创建表单
+        form = await MainForm.query_manager.create_form(form_data, images, source, user_openid=user_openid)
+        return form
+
     # 获取自己的表单(这两个接口我没有想好，这里是带参数进行选择查询未处理，已处理等等还是分开，这里可以考虑一下)
-    def get_single_page(self,request):
+    @method_decorator(auth.token_required)
+    def get(self,request):
         pass
+
     def get_multi_pages(self,request):
         pass
     

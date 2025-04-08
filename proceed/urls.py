@@ -8,7 +8,6 @@ e.g.  path("", views.index, name="index")
 from django.urls import path
 from . import views
 
-# 接口仍在开发中，暂时不写注册
 urlpatterns = [
-    
+    path("user_form", views.UserFormFunctions.as_view(), name="user_form"),
 ]

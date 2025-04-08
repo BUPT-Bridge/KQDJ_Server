@@ -24,7 +24,7 @@ choice.py:
     - HANDLED(2): 已处理状态
 """
 
-from .uuid import *
+from .generate_uuid import *
 from .path_processor import *
 from .choice import *
 

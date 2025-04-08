@@ -32,3 +32,10 @@ IS_NEED_FEEDBACK_CHOICES = [
 NOT_NEED_FEEDBACK = 0
 NEED_FEEDBACK = 1
 NEED_FEEDBACK_DONE = 2
+
+CATEGORY_CHOICES = [
+    ('物业纠纷类', '物业纠纷类'),
+    ('公共设施维护类', '公共设施维护类'),
+    ('环境卫生与秩序类', '环境卫生与秩序类'),
+    ('邻里矛盾类', '邻里矛盾类'),
+]
