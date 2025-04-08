@@ -1,5 +1,8 @@
 {
     "terminal.integrated.env.linux": {
         "API_KEY": "这里存放智谱api"
+    },
+    "terminal.integrated.env.windows": {
+        "API_KEY": "这里存放智谱api"
     }
 }
