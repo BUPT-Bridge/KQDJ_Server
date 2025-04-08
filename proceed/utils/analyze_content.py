@@ -1,9 +1,12 @@
 import requests
 from typing import Tuple
 import json
+import os
 
 # 配置参数
-API_KEY = "1ebd4555da814e7386a767e363ddb119.YBNwOuvn4VdOie29"  # 替换为你的实际API Key
+API_KEY = os.getenv('API_KEY')
+if not API_KEY:
+    raise ValueError("环境变量 API_KEY 未设置")  # 替换为你的实际API Key
 MODEL = "glm-4-flash"  # 选择模型，如 glm-4, glm-4-long 等
 URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
