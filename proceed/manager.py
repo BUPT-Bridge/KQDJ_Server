@@ -47,13 +47,13 @@ class MainFormManager(models.Manager):
         """获取需要回访的表单"""
         return self.get_queryset().filter(handle=1, feedback_status=1)
 
-    def filter_by_admin(self, admin_openid):
-        """按管理员openid筛选"""
-        return self.get_queryset().filter(admin_openid=admin_openid)
-
-    def filter_by_user(self, user_openid):
+    def filter_by_openid(self, user_openid):
         """按用户openid筛选"""
         return self.get_queryset().filter(user_openid=user_openid)
+    
+    def filter_by_pk(self, pk):
+        """按表单主键值筛选"""
+        return self.get_queryset().filter(pk=pk)
 
     def filter_by_handle_time(self, start_time=None, end_time=None):
         """

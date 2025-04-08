@@ -5,7 +5,7 @@ from utils.response import CustomResponse, CustomResponseSync
 from .models import MainForm
 import asyncio
 from rest_framework.decorators import api_view
-from rest_framework.parsers import MultiPartParser
+from utils.constance import *
 
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
@@ -13,7 +13,6 @@ from rest_framework.parsers import MultiPartParser
 # 其他字段可以根据需要自行添加
 # 建议所有接口数据通过Body返回
 class UserFormFunctions(APIView):
-    parser_classes = (MultiPartParser,)
     
     @method_decorator(auth.token_required)
     def post(self, request):
@@ -36,17 +35,43 @@ class UserFormFunctions(APIView):
         form = await MainForm.query_manager.create_form(form_data, images, source, user_openid=user_openid)
         return form
 
-    # 获取自己的表单(这两个接口我没有想好，这里是带参数进行选择查询未处理，已处理等等还是分开，这里可以考虑一下)
+
     @method_decorator(auth.token_required)
     def get(self,request):
-        pass
+        is_single = request.GET.get('pk', None)
+        if not is_single:
+            # 获取所有表单
+            return CustomResponse(self._get_multi_pages,request, openid=request.openid)
+        else:
+            # 获取单个表单
+            return CustomResponse(self._get_single_page,is_single)
 
-    def get_multi_pages(self,request):
-        pass
+
+    def _get_multi_pages(self,request,openid):
+        mainform_queryset = MainForm.query_manager.filter_by_openid(openid)
+        if not mainform_queryset.exists():
+            raise Exception('对应表单不存在')
+        return mainform_queryset.order_by('-upload_time').paginate(request)
     
     # 评价自己的表单
-    def evaluate_my_page(self,request):
-        pass
+    def _get_single_page(self,is_pk):
+        return MainForm.query_manager.filter_by_pk(is_pk).serialize()
+    
+    # 评价自己的表单
+    @method_decorator(auth.token_required)
+    def put(self,request):
+        is_pk = request.GET.get('pk', None)
+        if not is_pk:
+            raise Exception('pk不能为空')
+        return CustomResponse(self._update_form,request,is_pk)
+    
+    def _update_form(self,request,is_pk):
+        evaluate_info = request.data
+        form_evaulation = MainForm.objects.filter(pk=is_pk).first()
+        form_evaulation.update_form(evaluation_info=evaluate_info)
+        from .serializers import MainFormSerializer
+        return {'message':'评价成功',
+                'data':MainFormSerializer(form_evaulation).data}
     
 class AdminFormFunctions(APIView):
     # 拉起表单(单表单和多表单)

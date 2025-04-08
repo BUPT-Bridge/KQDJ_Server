@@ -133,3 +133,41 @@ def _adjust_admin_list(self, request, openid):
 - 在`DELETE`轮播图时候规范如下：*http://<<BASE_URL>>/api/community/banners?pk=9*
 - 在**Phone**部分的`DELETE`和`PUT`请求下都需要加入url传参部分，示例如下：
 *http://<<BASE_URL>>/api/community/phone_number?pk=2* 
+
+### 更新信息规范
+有以下<mark>三次</mark>更新过程,**源代码**如下
+```python
+update_types = [
+            bool(kwargs.get("handle_info")),
+            bool(kwargs.get("feedback_info")),
+            bool(kwargs.get("evaluation_info")),
+        ]
+```
+1. handle_info
+这个为管理员第一次处理的信息
+2. feedback_info
+这个是管理员第二次回访的信息(如果用户勾选需要回访)
+3. evaluation_info
+用户评价信息通过此来更新
+
+#### evaluation_info评价更新
+<mark>IMPORTANT!</mark>
+评价更新接口发送规范：
+```json
+{
+  "evaluation_info": {
+    "evaluation": "需要评价的数字"
+  }
+}
+```
+- "evaluation": "需要评价的数字",为int类型
+
+### 获取个人表单规范
+执行`GET`获取表单时，我们通过*url*传入参数不同设置不同的获取函数
+#### 获取个人对应的所有表单
+- 使用`GET`方法
+- 请求*http://<<BASE_URL>>/api/proceed/user_form?page=3&page_size=20* 
+#### 获取某一表单
+- 使用`GET`方法
+- 请求*http://<<BASE_URL>>/api/proceed/user_form?pk=1* 
+- `pk`值是该表单的主键值，会在获取总表时候全部返回，相应请求即可
