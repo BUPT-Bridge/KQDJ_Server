@@ -64,7 +64,7 @@ class MainForm(models.Model):
     handle = models.IntegerField(
         choices=HANDLE_STATUS_CHOICES, default=UNHANDLED, verbose_name="处理状态"
     )
-    feedback_status = models.BooleanField(
+    feedback_status = models.IntegerField(
         choices=IS_NEED_FEEDBACK_CHOICES, default=NEED_FEEDBACK, verbose_name="回访状态"
     )
     evaluation = models.IntegerField(null=True, blank=True, verbose_name="评价分数")
@@ -110,7 +110,7 @@ class MainForm(models.Model):
             self.admin_name = handle_info.get("name", self.admin_name)
             self.admin_way = handle_info.get("way", self.admin_way)
             self.admin_content = handle_info.get("content", self.admin_content)
-            self.admin_openid = handle_info.get("openid", self.admin_openid)
+            self.admin_openid = kwargs.get("openid", self.admin_openid)
             if self.feedback_status == NOT_NEED_FEEDBACK:
                 self.handle = HANDLED
             else:

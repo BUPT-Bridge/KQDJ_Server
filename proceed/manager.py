@@ -26,9 +26,9 @@ class MainFormQuerySet(models.QuerySet):
         serializer_class = MainFormSerializerSimple if simple else MainFormSerializer
         return serializer_class(self, many=True).data
 
-    def paginate(self, request) -> dict:
+    def paginate(self, request,simple=False) -> dict:
         """QuerySet的分页方法"""
-        return MainFormManager().paginate(request, self)
+        return MainFormManager().paginate(request, self,simple=simple)
 
 
 class MainFormManager(models.Manager):
@@ -50,6 +50,10 @@ class MainFormManager(models.Manager):
     def filter_by_openid(self, user_openid):
         """按用户openid筛选"""
         return self.get_queryset().filter(user_openid=user_openid)
+    
+    def filter_by_admin_openid(self, admin_openid):
+        """按用户openid筛选"""
+        return self.get_queryset().filter(admin_openid=admin_openid)
     
     def filter_by_pk(self, pk):
         """按表单主键值筛选"""
@@ -81,16 +85,16 @@ class MainFormManager(models.Manager):
         paginator = Paginator(queryset, page_size)
         current_page = paginator.get_page(page)
 
-        from .serializers import MainFormSerializer
-
+        from .serializers import MainFormSerializer, MainFormSerializerSimple
+        # print(simple)
         return {
             "total": paginator.count,
             "total_pages": paginator.num_pages,
             "current_page": page,
             "page_size": page_size,
             "results": (
-                MainFormSerializer(current_page.object_list, many=True).data
-                if not simple
+                MainFormSerializerSimple(current_page.object_list, many=True).data
+                if simple
                 else MainFormSerializer(current_page.object_list, many=True).data
             ),
         }
