@@ -225,3 +225,32 @@ update_types = [
 - 请求`http://<<BASE_URL>>/api/proceed/user_form?pk=1`*
 
 - `pk`值是该表单的主键值，会在获取总表时候全部返回，相应请求即可
+
+### 获取excel表
+
+#### 请求接口
+- 使用`POST`接口，请求接口类似如下：*http://<<BASE_URL>>/api/proceed/excel_get*
+- 请求数据如下：
+```json
+{
+  "start_time": "2025-3-12",
+  "end_time": "2025-5-11"
+}
+```
+- 必须严格按照如上`YYYY-MM-DD`格式，并且要求请求日期符合规范，不可为当天之后的日期
+
+#### 前端解析
+
+- 代码中逻辑如下：
+```python
+
+output = BytesIO()
+        # 创建 HTTP 响应
+        response = HttpResponse(
+            output,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="MainForm_Data.xlsx"'
+
+```
+请根据response中相应修改的`type`进行解析
