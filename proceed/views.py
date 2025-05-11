@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from utils.response import CustomResponse, CustomResponseSync
 from .models import MainForm
 import asyncio
-from rest_framework.decorators import api_view
 from utils.constance import *
 
 
@@ -216,3 +215,19 @@ class AdminFormHandleFunctions(APIView):
         from .serializers import MainFormSerializer
 
         return {"message": "表单处理成功", "data": MainFormSerializer(form).data}
+    
+class List2Excel(APIView):    
+    @method_decorator(
+        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
+    )
+    def post(self, request):
+        data = request.data
+        start_date = data.get("start_time", "")
+        end_date = data.get("end_time", "")
+        try:
+            from .utils.handle_timestamp import process_date_range
+            start_timestamp, end_timestamp = process_date_range(start_date, end_date)
+            return MainForm.export_to_excel(start_timestamp, end_timestamp)
+
+        except Exception as e:
+            raise Exception(str(e))

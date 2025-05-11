@@ -10,6 +10,10 @@ from .utils.sync_feedback_status import sync_feedback_status
 from .utils import *
 import uuid
 from utils.time_utils import set_timestamp  # 改为使用绝对导入
+from openpyxl import Workbook
+from io import BytesIO
+from django.http import HttpResponse
+from .utils.handle_timestamp import timestamp_to_beijing_str
 
 
 # Create your models here.
@@ -135,6 +139,75 @@ class MainForm(models.Model):
         self.save()
         return True
 
+    def export_to_excel(start_timestamp, end_timestamp):
+        """
+        导出符合条件的 MainForm 数据到 Excel 文件。
+
+        Args:
+            start_timestamp (int): 起始时间戳
+            end_timestamp (int): 结束时间戳
+
+        Returns:
+            HttpResponse: 包含 Excel 文件的 HTTP 响应
+        """
+        # 筛选符合条件的记录
+        queryset = MainForm.objects.filter(
+            upload_time__gte=start_timestamp, upload_time__lte=end_timestamp
+        )
+
+        # 创建 Excel 工作簿
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "MainForm Data"
+
+        # 写入表头
+        headers = [
+            "表单序号", "表单类型", "上传时间", "表单分类","表单标题", "姓名", "电话号码", "地址", 
+             "内容", "是否需要回访", "管理员电话", "管理员姓名", 
+            "处理方式", "管理员处理内容", "处理时间", "回访总结", 
+            "处理状态", "回访状态", "评价分数", "是否已评价"
+        ]
+        ws.append(headers)
+
+        # 写入数据
+        for form in queryset:
+            row = [
+                form.serial_number,
+                dict(FORM_TYPE_CHOICES).get(form.type,"建议"),
+                timestamp_to_beijing_str(form.upload_time),  # 转换上传时间
+                form.catagory,
+                form.title,
+                form.name,
+                form.phone,
+                form.address,
+                form.content,
+                "是" if form.feedback_need else "否",
+                form.admin_phone,
+                form.admin_name,
+                form.admin_way,
+                form.admin_content,
+                "未处理" if form.handle == 0 else timestamp_to_beijing_str(form.handle_time),  # 处理时间
+                form.feedback_summary,
+                dict(HANDLE_STATUS_CHOICES).get(form.handle, "无"),
+                dict(IS_NEED_FEEDBACK_CHOICES).get(form.feedback_status, "无"),
+                form.evaluation,
+                "是" if form.evaluation_or_not else "否",
+            ]
+            ws.append(row)
+
+        # 将工作簿保存到内存中
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # 创建 HTTP 响应
+        response = HttpResponse(
+            output,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="MainForm_Data.xlsx"'
+        return response
+
     def __str__(self):
         return f"表单 {self.uuidx} - {self.name} - {self.get_handle_display()}"
 
@@ -173,39 +246,3 @@ class ImageModel(models.Model):
         verbose_name = "表单图片"
         verbose_name_plural = "表单图片"
 
-
-# def update_form(self, **kwargs):
-#     """
-#     :param kwargs: 可包含以下字段：
-#         - admin_info: dict 管理员信息
-#         - feedback_info: dict 回访信息
-#         - evaluation_info: dict 评价信息
-#     :return: bool 更新是否成功
-#     """
-#         # 更新管理员信息
-#     admin_info = kwargs.get('handle_info', {})
-#     if admin_info:
-#         self.admin_phone = admin_info.get('phone', self.admin_phone)
-#         self.admin_name = admin_info.get('name', self.admin_name)
-#         self.admin_way = admin_info.get('way', self.admin_way)
-#         self.admin_content = admin_info.get('content', self.admin_content)
-#         self.admin_openid = admin_info.get('openid', self.admin_openid)
-#         if self.feedback_status == NOT_NEED_FEEDBACK:
-#             self.handle = HANDLED
-#         else :
-#             self.handle = PROCESSING
-
-#         # 更新回访信息
-#     feedback_info = kwargs.get('feedback_info', {})
-#     if feedback_info:
-#         self.feedback_status = NEED_FEEDBACK_DONE
-#         self.handle = HANDLED
-#         self.feedback_summary = feedback_info.get('feedback_summary', self.feedback_summary)
-
-#         # 更新评价信息
-#     evaluation_info = kwargs.get('evaluation_info', {})
-#     if evaluation_info:
-#         self.evaluation = evaluation_info.get('evaluation')
-#         self.evaluation_or_not = True
-#     self.save()
-#     return True

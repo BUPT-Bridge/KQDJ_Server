@@ -12,4 +12,5 @@ urlpatterns = [
     path("user_form", views.UserFormFunctions.as_view(), name="user_form"),
     path("admin_form", views.AdminFormFunctions.as_view(), name="admin_form"),
     path("admin_handle", views.AdminFormHandleFunctions.as_view(), name="admin_handle"),
+    path("excel_get", views.List2Excel.as_view(), name="excel_get"),
 ]

@@ -10,7 +10,6 @@ from django.core.paginator import Paginator
 from .utils.analyze_content import analyze_content
 from .utils.generate_uuid import generate_custom_uuid
 from asgiref.sync import sync_to_async
-import asyncio
 from django.db import transaction
 
 
@@ -107,6 +106,8 @@ class MainFormManager(models.Manager):
         @sync_to_async
         def create_form_sync():
             with transaction.atomic():
+                status=form_data.get("feedback_need", False)
+                print("status",status)
                 form = self.create(
                     phone=form_data.get("phone"),
                     name=form_data.get("name"),
@@ -115,6 +116,7 @@ class MainFormManager(models.Manager):
                     feedback_need=form_data.get("feedback_need", False),
                     audio=form_data.get("audio", None),
                     user_openid=user_openid,
+                    feedback_status= 0 if status==False else 1
                 )
 
                 if images:
