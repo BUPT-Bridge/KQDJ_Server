@@ -8,3 +8,4 @@ settings.json
 media
 .env
 create_view_stats.py
+.VSCode*
