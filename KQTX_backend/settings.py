@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# 微信网页登录成功后跳转的前端页面URL
+FRONTEND_URL = "http://localhost:3000"
+
 
 # Application definition
 
@@ -60,7 +63,7 @@ ROOT_URLCONF = "KQTX_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

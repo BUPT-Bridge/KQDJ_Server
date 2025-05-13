@@ -6,7 +6,8 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from .views import LoginOrRegisterWechat,LoginTest,UserInfo, AdminList, ChangePermission
+from .views import LoginOrRegisterWechat,LoginTest,UserInfo, AdminList, ChangePermission, wechat_verify
+from .views_web_login import WxWebLoginURL, WxWebLoginCallback, WxWebLoginTest
 
 urlpatterns = [
     # path('register', UserRegisterWechat.as_view(), name='register'),
@@ -16,5 +17,12 @@ urlpatterns = [
     path('test', LoginTest.as_view(),name="login_test"),
     path('UserInfo', UserInfo.as_view(), name='info'),
     path('Adminlist', AdminList.as_view(), name='admin_list'),
-    path('Changepermission', ChangePermission.as_view(), name='change_permission')
+    path('Changepermission', ChangePermission.as_view(), name='change_permission'),
+    
+    # 微信网页扫码登录相关路由
+    path('web/login/url', WxWebLoginURL.as_view(), name='wx_web_login_url'),
+    path('web/login/callback', WxWebLoginCallback.as_view(), name='wx_web_login_callback'),
+    path('web/login/test', WxWebLoginTest.as_view(), name='wx_web_login_test'),
+
+    path('test1', wechat_verify),
 ]
