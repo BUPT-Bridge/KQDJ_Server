@@ -18,7 +18,7 @@ class BannerManager(models.Manager):
         from .serializers import BannerSerializer
         banners = self.get_queryset().all()
         if not banners:
-            raise ValueError("No banners found")
+            return []
         return {'data':BannerSerializer(banners, many=True).data,
                 'message':"获取成功"}
 
@@ -88,7 +88,8 @@ class PhoneNumberManager(models.Manager):
 
         if first_phone_number:
             return PhoneNumberSerializer(first_phone_number, many=True).data
-        raise ValueError("No phone number found")
+        else: 
+            return []
 
     def update_phone_number(
         self, phone_name: str, phone_number: str, pk: int = None

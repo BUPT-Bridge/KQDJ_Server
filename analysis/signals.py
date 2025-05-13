@@ -1,11 +1,17 @@
 """
-此模块定义信号处理器，用于在MainForm模型变化时自动更新StatusTypeNum模型
+此模块定义信号处理器，用于在MainForm模型变化时自动更新相关模型
+优化了信号处理逻辑，合并了相关操作以提高性能
 """
+import logging
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from proceed.models import MainForm
-from .models import StatusTypeNum
-from .tasks import update_category_counts_async
+from proceed.utils.choice import UNHANDLED
+from .models import StatusTypeNum, FormUserRelation
+from .tasks import update_category_counts_async, create_form_user_relation_async
+
+# 配置日志
+logger = logging.getLogger(__name__)
 
 # 保存instance的旧category值，用于对比是否发生变化
 old_category = {}
@@ -23,9 +29,11 @@ def store_old_category(sender, instance=None, **kwargs):
             pass
 
 @receiver([post_save, post_delete], sender=MainForm)
-def update_status_counts(sender, instance=None, created=False, **kwargs):
+def handle_mainform_change(sender, instance=None, created=False, **kwargs):
     """
-    当MainForm模型实例保存或删除时，自动更新StatusTypeNum模型
+    当MainForm模型实例变化时，集中处理所有相关更新操作:
+    1. 更新统计数据
+    2. 更新表单用户关系
     
     Args:
         sender: 发送信号的模型类
@@ -33,55 +41,72 @@ def update_status_counts(sender, instance=None, created=False, **kwargs):
         created: 是否为新创建的实例
         **kwargs: 其他参数
     """
-    # 判断是否需要更新状态计数
-    update_status_needed = created  # 新记录肯定需要更新
-    update_category_needed = created  # 新记录需要更新类别计数
+    # 1. 处理状态和类别计数更新
+    # 确定是否是删除操作
+    is_delete = kwargs.get('signal') == post_delete
     
-    # 记录需要更新的类别
+    # 确定需要更新哪些内容
+    update_fields = kwargs.get('update_fields')
+    needs_status_update = created or (update_fields is None) or (update_fields and ('handle' in update_fields or 'feedback_status' in update_fields))
+    needs_category_update = created or (update_fields is None) or (update_fields and 'category' in update_fields)
+    
+    # 确定需要更新的类别
     categories_to_update = set()
     
-    if not created and instance:
-        # 检查是否是删除操作
-        is_delete = kwargs.get('signal') == post_delete
+    # 处理类别变更
+    if not created and not is_delete and instance and instance.pk in old_category:
+        old_cat = old_category.get(instance.pk)
+        new_cat = instance.category
         
-        # 对于非创建的操作，检查更新的字段
-        if kwargs.get('update_fields') is not None:
-            update_fields = kwargs.get('update_fields')
-            update_status_needed = 'handle' in update_fields or 'feedback_status' in update_fields
-            update_category_needed = 'category' in update_fields
-        else:
-            # 如果没有指定更新字段，需要检查category是否变化
-            if not is_delete and instance.pk in old_category:
-                old_cat = old_category.get(instance.pk)
-                new_cat = instance.category
-                
-                # 如果类别发生变化，记录需要更新的类别
-                if old_cat != new_cat:
-                    update_category_needed = True
-                    if old_cat:  # 旧类别存在则需要更新
-                        categories_to_update.add(old_cat)
-                    if new_cat:  # 新类别存在则需要更新
-                        categories_to_update.add(new_cat)
-        
-        # 删除操作，如果实例有类别，需要更新该类别计数
-        if is_delete and instance.category:
-            update_category_needed = True
-            categories_to_update.add(instance.category)
-        
+        # 如果类别发生变化，记录需要更新的类别
+        if old_cat != new_cat:
+            needs_category_update = True
+            if old_cat:
+                categories_to_update.add(old_cat)
+            if new_cat:
+                categories_to_update.add(new_cat)
+    
+    # 处理删除操作
+    if is_delete and instance and instance.category:
+        needs_category_update = True
+        categories_to_update.add(instance.category)
+    
     # 清理保存的旧值，避免内存泄漏
     if instance and instance.pk in old_category:
         del old_category[instance.pk]
     
-    # 更新状态计数
-    if update_status_needed or kwargs.get('update_fields') is None:
+    # 执行更新操作
+    if needs_status_update:
         StatusTypeNum.update_counts(update_category=False)  # 不在这里更新类别计数
     
     # 异步更新类别计数
-    if update_category_needed:
+    if needs_category_update:
         if categories_to_update:
-            # 如果有特定类别需要更新，逐个更新
             for category in categories_to_update:
                 update_category_counts_async(category)
         else:
-            # 如果没有特定类别或无法确定，更新所有类别
             update_category_counts_async()
+    
+    # 2. 处理表单用户关系更新 - 改为使用延迟处理
+    if not is_delete and instance and instance.handle == UNHANDLED:  # 只处理未处理状态的表单
+        try:
+            # 检查必要字段是否已经生成
+            if instance.category and instance.title:
+                # 如果已经有分类和标题，直接创建关系，但仅限于未处理状态
+                FormUserRelation.create_or_update_from_form(instance)
+            else:
+                # 否则，安排延迟任务创建关系
+                # 延迟5秒，等待主表单的字段被大模型生成
+                create_form_user_relation_async.apply_async(
+                    args=[instance.pk], 
+                    countdown=5
+                )
+        except Exception as e:
+            logger.error(f"更新FormUserRelation时出错: {str(e)}")
+    elif instance and instance.handle != UNHANDLED:
+        # 如果表单状态不是未处理，尝试删除对应的关系记录
+        try:
+            FormUserRelation.objects.filter(main_form=instance).delete()
+            logger.info(f"已删除非未处理状态表单的关系记录: {instance.pk}")
+        except Exception as e:
+            logger.error(f"清理非未处理表单关系时出错: {str(e)}")

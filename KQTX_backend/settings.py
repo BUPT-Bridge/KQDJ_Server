@@ -141,3 +141,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # 使用 Redis 作为消息代理，0 是数据库编号
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0' # 如果你需要存储任务结果
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Shanghai' # 根据你的时区设置

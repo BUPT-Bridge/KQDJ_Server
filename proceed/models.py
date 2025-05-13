@@ -175,7 +175,7 @@ class MainForm(models.Model):
                 form.serial_number,
                 dict(FORM_TYPE_CHOICES).get(form.type,"建议"),
                 timestamp_to_beijing_str(form.upload_time),  # 转换上传时间
-                form.catagory,
+                form.category,
                 form.title,
                 form.name,
                 form.phone,

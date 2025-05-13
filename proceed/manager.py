@@ -158,7 +158,7 @@ class MainFormManager(models.Manager):
         serial_number = generate_custom_uuid(form.serial_number,form_type)
         form.type = form_type
         form.title = title
-        form.catagory = category  # 注意：这里 catagory 可能是拼写错误，应该是 category
+        form.category = category  
         form.serial_number = serial_number
         form.save()
         return form

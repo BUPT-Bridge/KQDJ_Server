@@ -41,6 +41,15 @@ make env
 ```
 > `Attention!` 要在根目录下即../KQDJ_Server下运行以上命令
 
+7. `暂时`
+
+```cmd
+sudo apt install redis-server
+sudo systemctl status redis-server
+```
+在根目录下先执行celery -A KQTX_backend worker -l info
+启用缓存区
+
 
 ### 调试方法
 

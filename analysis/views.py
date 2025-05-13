@@ -1,9 +1,12 @@
 from rest_framework.views import APIView
 from utils.response import CustomResponse
-from .models import StatusTypeNum, ViewNum
+from .models import StatusTypeNum, ViewNum, FormUserRelation
 from django.utils.decorators import method_decorator
 from utils.auth import auth
 from utils.constance import ADMIN_USER, SUPER_ADMIN_USER
+from proceed.models import MainForm
+from proceed.utils.choice import UNHANDLED
+from proceed.serializers import MainFormSerializer
 
 
 class ViewNumStatsView(APIView):
@@ -99,6 +102,50 @@ class StatusCountView(APIView):
             })
             
         return result
+
+
+class TopUnhandledFormView(APIView):
+    """
+    获取前N个未处理表单的API视图
+    默认返回前6条未处理的表单及其解决方案建议
+    """
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER]))
+    def get(self, request):
+        """
+        获取前N个未处理表单及其解决方案建议
+        """
+        return CustomResponse(self._get_top_unhandled_forms, request)
     
-    
+    def _get_top_unhandled_forms(self, request):
+        """获取并返回前N个未处理表单"""
+        # 从查询参数获取要返回的表单数量，默认为6
+        limit = int(request.query_params.get('limit', 6))
+        if limit > 20:  # 限制最大数量，避免返回过多数据
+            limit = 20
+            
+        # 获取未处理的表单
+        unhandled_forms = MainForm.query_manager.unhandled().order_by('-upload_time')[:limit]
+        
+        result = []
+        for form in unhandled_forms:
+            # 获取表单序列化数据
+            form_data = MainFormSerializer(form).data
+            
+            # 获取关联的解决方案建议
+            relation = FormUserRelation.objects.filter(main_form=form).first()
+            suggestion = None
+            if relation and relation.solution_suggestion:
+                suggestion = relation.solution_suggestion
+                
+            # 将表单数据和解决方案建议合并
+            form_data['solution_suggestion'] = suggestion
+            result.append(form_data)
+            
+        return {
+            'message': '获取成功',
+            'count': len(result),
+            'forms': result
+        }
+
+
 
