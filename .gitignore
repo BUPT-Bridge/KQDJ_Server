@@ -6,3 +6,4 @@ migrations
 settings.json
 /db.sqlite3
 media
+.env

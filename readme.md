@@ -7,9 +7,10 @@
 2. 安装好了Python并且建好了环境 (`python`和`pip`能够正常使用)
 3. 安装了make工具方便快速调试 (`sudo apt-get install make`)
 4. 安装`Reqable`作为调试工具 (可选) ([官网链接](https://reqable.com/))
+5. 阅读了`.env.example`，创建了属于自己的`.env`文件并设置好了环境变量(不要写任何注释)
 
 ### `make`命令详解
-1. 安装相应依赖
+1. 安装相应依赖并设置环境变量
 ```bash
 make setup
 ```
@@ -32,6 +33,11 @@ make # make migrate 也可以
 5. 删除缓存
 ```bash
 make clean # 如果你想删库，使用 make cleanall
+```
+
+6. 设置环境变量
+```bash
+make env
 ```
 > `Attention!` 要在根目录下即../KQDJ_Server下运行以上命令
 

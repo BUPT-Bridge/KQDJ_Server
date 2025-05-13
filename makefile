@@ -1,4 +1,4 @@
-.PHONY: init run clean setup cleanall migrate
+.PHONY: init run clean setup cleanall migrate env
 .DEFAULT_GOAL := migrate
 
 init:
@@ -44,11 +44,19 @@ cleanall:
 	@rm -rf db.sqlite3
 	@echo "✅ 清理完成"
 
-setup:
+setup: env
 	pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
+	@echo "✅ 依赖安装完成"
 
 migrate:
 	@echo "执行数据库迁移..."
 	python manage.py makemigrations user proceed community analysis
 	python manage.py migrate
 	@echo "✅ 数据库迁移成功"
+
+env:
+	@echo "正在加载环境变量..."
+	@if [ ! -f .env ]; then echo "错误：.env 文件不存在"; exit 1; fi
+	@echo "当前环境变量值："
+	@(cat .env; echo) | while IFS='=' read -r key value; do if [ -n "$$key" ]; then echo "$$key=$$value"; export "$$key=$$value"; fi done
+	@echo "✅ 环境变量加载成功"
