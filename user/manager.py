@@ -38,6 +38,15 @@ class UsersManager(models.Manager):
     def get_password(self, openid):
         """获取某个用户的密码的表单"""
         return self.filter(openid=openid).get('password')
+    
+    def get_enrollment(self):
+        """获取今天注册的用户数量"""
+        from datetime import datetime, time
+        today = datetime.now().date()
+        today_start = datetime.combine(today, time.min)
+        today_end = datetime.combine(today, time.max)
+        
+        return self.get_queryset().filter(created_at__range=(today_start, today_end)).count()
 
     def paginate(self, request, queryset=None):
         """

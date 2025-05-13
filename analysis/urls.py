@@ -6,8 +6,9 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from .views import StatusCountView
+from .views import StatusCountView, ViewNumStatsView
 
 urlpatterns = [
     path('status', StatusCountView.as_view(), name='status_counts'),
+    path('view-stats', ViewNumStatsView.as_view(), name='view_stats'),
 ]

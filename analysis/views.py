@@ -1,10 +1,44 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from utils.response import CustomResponse
-from .models import StatusTypeNum
+from .models import StatusTypeNum, ViewNum
+from django.utils.decorators import method_decorator
+from utils.auth import auth
+from utils.constance import ADMIN_USER, SUPER_ADMIN_USER
 
-# Create your views here.
+
+class ViewNumStatsView(APIView):
+    """
+    访问量和注册量统计的API视图
+    """
+    @method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER]))
+    def get(self, request):
+        """
+        获取近七天的访问量和注册量统计数据
+        """
+        return CustomResponse(self._get_view_stats)
+    
+    def _get_view_stats(self):
+        """获取并返回最近7天的访问量和注册量统计"""
+        # 触发一次更新，确保数据是最新的
+        ViewNum.update_today_counts()
+        
+        # 获取所有记录，按日期降序排序
+        records = ViewNum.objects.all().order_by('-date')[:7]
+        
+        stats = []
+        for record in records:
+            stats.append({
+                'date': record.date.strftime('%m-%d'),
+                'view_count': record.view_count,
+                'enrollment_count': record.enrollment_count,
+                'is_today': record.is_today
+            })
+            
+        return {
+            'message': '获取成功',
+            'data': stats
+        }
+
 
 class StatusCountView(APIView):
     """
@@ -65,3 +99,6 @@ class StatusCountView(APIView):
             })
             
         return result
+    
+    
+

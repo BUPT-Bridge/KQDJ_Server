@@ -151,3 +151,83 @@ class StatusTypeNum(models.Model):
         status_num.save()
         
         return status_num
+    
+class ViewNum(models.Model):
+    """视图数量模型 - 存储近七天的访问量和注册量数据"""
+    date = models.DateField(verbose_name='日期')
+    view_count = models.IntegerField(default=0, verbose_name='访问量')
+    enrollment_count = models.IntegerField(default=0, verbose_name='注册量')
+    is_today = models.BooleanField(default=False, verbose_name='是否为当天')
+    
+    class Meta:
+        verbose_name = '使用情况'
+        verbose_name_plural = '使用情况'
+        ordering = ['-date']  # 按日期倒序排列
+
+    def __str__(self):
+        return f"{self.date} - 访问量: {self.view_count}, 注册量: {self.enrollment_count}"
+    
+    @classmethod
+    def update_today_counts(cls):
+        """
+        更新当天的访问量和注册量
+        从PageView和Users模型获取数据
+        """
+        from datetime import date
+        from community.models import PageView
+        from user.models import Users
+        
+        today = date.today()
+        
+        # 先处理所有的is_today记录
+        # 将所有记录标记为非今天
+        cls.objects.filter(is_today=True).update(is_today=False)
+        
+        # 获取或创建今天的记录
+        # 删除可能的重复记录
+        today_records = cls.objects.filter(date=today)
+        if today_records.count() > 1:
+            # 保留第一条，删除其余的
+            keep_id = today_records.first().id
+            cls.objects.filter(date=today).exclude(id=keep_id).delete()
+            
+        # 获取或创建今天的记录
+        today_record, created = cls.objects.get_or_create(
+            date=today,
+            defaults={'is_today': True, 'view_count': 0, 'enrollment_count': 0}
+        )
+        
+        # 标记为今天的记录
+        today_record.is_today = True
+        
+        # 从PageView获取当天访问量
+        page_view = PageView.objects.first()
+        if page_view:
+            today_record.view_count = page_view.view_count
+        
+        # 从Users获取当天注册量
+        today_record.enrollment_count = Users.query_manager.get_enrollment()
+        
+        # 保存更新
+        today_record.save()
+        
+        # 维护7天的记录限制
+        cls._maintain_records_limit()
+        
+        return today_record
+    
+    @classmethod
+    def _maintain_records_limit(cls, days_limit=7):
+        """
+        维护记录数量，保持最近7天的数据
+        删除超过7天的旧记录
+        """
+        # 获取所有记录，按日期降序排序
+        records = cls.objects.all().order_by('-date')
+        
+        # 如果记录超过7条，删除多余的
+        if records.count() > days_limit:
+            # 获取需要保留的7条记录的ID
+            keep_ids = records[:days_limit].values_list('id', flat=True)
+            # 删除其他记录
+            cls.objects.exclude(id__in=keep_ids).delete()

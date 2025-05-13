@@ -7,3 +7,4 @@ settings.json
 /db.sqlite3
 media
 .env
+create_view_stats.py

@@ -80,7 +80,7 @@ class PageView(models.Model):
         verbose_name_plural = '页面访问量'
 
     def __str__(self):
-        return self.page
+        return self.view_count
     
 class PhoneNumber(models.Model):
     objects = models.Manager()
