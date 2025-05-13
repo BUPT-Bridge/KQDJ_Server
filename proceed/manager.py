@@ -39,12 +39,20 @@ class MainFormManager(models.Manager):
         return self.get_queryset().filter(handle=0)
 
     def handled(self):
-        """获取已处理的表单"""
+        """获取已完结的表单"""
         return self.get_queryset().filter(handle=2)
 
     def feedback_needed(self):
         """获取需要回访的表单"""
         return self.get_queryset().filter(handle=1, feedback_status=1)
+    
+    def handling(self):
+        """获取正在处理的表单"""
+        return self.get_queryset().filter(handle=1)
+
+    def filter_category(self, category):
+        """按分类筛选"""
+        return self.get_queryset().filter(category=category)
 
     def filter_by_openid(self, user_openid):
         """按用户openid筛选"""

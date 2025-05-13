@@ -31,7 +31,7 @@ class MainForm(models.Model):
     serial_number = models.CharField(
         max_length=20, unique=True, null=True, blank=True, verbose_name="表单序号"
     )
-    catagory = models.CharField(
+    category = models.CharField(
         max_length=10, choices=CATEGORY_CHOICES, verbose_name="表单分类",null=True, blank=True
     )
 
