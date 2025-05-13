@@ -7,6 +7,7 @@ from utils.auth import auth
 from utils.constance import *
 from .utils.request_proceesor import request_proceesor
 from .utils.validate import VerificationCode
+from utils.wx_web_login import get_access_token
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
@@ -127,34 +128,34 @@ class ChangePermission(APIView):
             reply = verification.verify_code(code)
         Users.query_manager.self_fliter(openid).update(permission_level=ADMIN_USER)
         return reply
+
     
-
-
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-import hashlib
-
-# 微信测试号的Token（需与微信后台配置一致）
-WECHAT_TOKEN = "test123"  # 替换成你的Token
-
-@csrf_exempt  # 禁用CSRF保护（微信验证是GET请求，但后续消息可能是POST）
-def wechat_verify(request):
-    if request.method == 'GET':
-        # 获取微信请求参数
-        signature = request.GET.get('signature', '')
-        timestamp = request.GET.get('timestamp', '')
-        nonce = request.GET.get('nonce', '')
-        echostr = request.GET.get('echostr', '')
-
-        # 1. 将Token、timestamp、nonce按字典序排序
-        params = sorted([WECHAT_TOKEN, timestamp, nonce])
-        # 2. 拼接后SHA1加密
-        sha1_str = hashlib.sha1(''.join(params).encode('utf-8')).hexdigest()
-
-        # 3. 校验签名
-        if sha1_str == signature:
-            return HttpResponse(echostr)  # 验证成功，返回echostr
-        else:
-            return HttpResponse("Verification Failed", status=403)
-    else:
-        return HttpResponse("Method Not Allowed", status=405)
+class WxWebLoginWeb(APIView):
+    """
+    处理微信网页直接POST code登录的接口
+    """
+    def post(self, request):
+        return CustomResponse(self._web_login_or_register, request)
+    
+    def _web_login_or_register(self, request) -> dict:
+        # 获取请求数据
+        data = request.data
+        code = data.get('code')
+        
+        if not code:
+            raise Exception('缺少必要参数code')
+            
+        # 使用code获取access_token和openid
+        wx_info = get_access_token(code)
+        openid = wx_info.get('openid')
+            
+        if not openid:
+            raise Exception('获取openid失败')
+                
+            # 调用LoginTest中的登录或注册逻辑
+        login_test = LoginTest()
+        mock_request = request
+        mock_request.data = {'openid': openid}
+        result = login_test._login_or_register(mock_request)
+            
+        return result

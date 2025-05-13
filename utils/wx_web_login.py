@@ -3,9 +3,9 @@ import json
 from typing import Dict, Optional
 
 # 微信网页应用配置（需要替换为您的实际配置）
-WX_WEB_APP_ID = "wxa78169eeb3e130bc"
-WX_WEB_APP_SECRET = "eb49dc871501d01cc5a161f71602ac42" 
-WEB_REDIRECT_URI = "https://api.kuangqiaodongjie.cn"  # 需要进行urlencode编码
+WX_WEB_APP_ID = "wxbdc5610cc59c1631"
+WX_WEB_APP_SECRET = "ee5a5f2802fbfeeef23ec2d518d847ac" 
+WEB_REDIRECT_URI = "http://8.130.167.117:80/"  # 需要进行urlencode编码
 
 def get_qrconnect_url() -> str:
     """

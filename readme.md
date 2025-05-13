@@ -254,3 +254,22 @@ output = BytesIO()
 
 ```
 请根据response中相应修改的`type`进行解析
+
+### 微信扫码登录
+#### 接口调用原理
+参考[微信开放平台](https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html)的文档进行开发
+流程图如下：
+![](./tutor_picture/D0wkkHSbtC6VUSHX4WsjP5ssg5mdnEmXO8NGVGF34dxS9N1WCcq6wvquR4K_Hcut.png)
+1. 调用以及重定向接口均在前端完成
+2. 前端只需要返回申请成功的`code`即可
+3. 获得code后，按照正常wx登录逻辑即可
+4. 最后返回前端一个token用于校验
+
+#### 接口调用规范
+- 使用`POST`方法，请求api:**http://0.0.0.0:8000/api/user/web_login**
+- 请求体格式如下
+```json
+{
+    "code": "······"
+}
+```
