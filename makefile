@@ -1,7 +1,7 @@
 .PHONY: init run clean setup cleanall migrate env
-.DEFAULT_GOAL := migrate
+.DEFAULT_GOAL := run
 
-init:
+init: env
 	@if [ -z "$$USER" ]; then echo "错误：必须设置 USER 环境变量" && exit 1; fi
 	@if [ -z "$$PASSWORD" ]; then echo "错误：必须设置 PASSWORD 环境变量" && exit 1; fi
 	@echo "✅ 环境变量 USER 和 PASSWORD 已设置"
@@ -21,7 +21,7 @@ init:
 	python manage.py createsuperuser --noinput --username "$$USER" --email "$$USER@localhost"
 	@echo "✅ 超级用户创建成功"
 
-run:
+run: env
 	python manage.py runserver 0.0.0.0:8000
 
 clean:
@@ -33,13 +33,7 @@ clean:
 	@find ./user ./proceed ./community ./analysis -name "*.pyc" -delete 2>/dev/null || true
 	@echo "✅ 清理完成"
 
-cleanall:
-	@echo "清理迁移文件..."
-	@find ./user ./proceed ./community ./analysis -path "*/migrations/*.py" -not -name "__init__.py" -delete
-	@find ./user ./proceed ./community ./analysis -path "*/migrations/*.pyc" -delete
-	@echo "清理pycache..."
-	@find ./user ./proceed ./community ./analysis -name "__pycache__" -type d -exec rm -rf {} \; 2>/dev/null || true
-	@find ./user ./proceed ./community ./analysis -name "*.pyc" -delete 2>/dev/null || true
+cleanall: clean
 	@echo "清理数据库..."
 	@rm -rf db.sqlite3
 	@echo "✅ 清理完成"
@@ -48,7 +42,7 @@ setup: env
 	pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
 	@echo "✅ 依赖安装完成"
 
-migrate:
+migrate: env
 	@echo "执行数据库迁移..."
 	python manage.py makemigrations user proceed community analysis
 	python manage.py migrate
