@@ -17,17 +17,17 @@ make setup
 
 2. 初始化用户
 ```bash
-USER="USERNAME" PASSWORD="PWD" make init
+USER="USERNAME" PASSWORD="PWD" make init # 支持在.env中设置
 ```
 
 3. 运行服务
 ```bash
-make run
+make  # make run 也可以
 ```
 
 4. 数据库迁移
 ```bash
-make # make migrate 也可以
+make migrate
 ```
 
 5. 删除缓存
