@@ -16,3 +16,15 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+app.conf.update(
+    task_routes={
+        'analysis.tasks.analyze_form_content_async': {'queue': 'analysis'},
+        'analysis.tasks.generate_solution_suggestion_async': {'queue': 'analysis'},
+        'analysis.tasks.create_form_user_relation_async': {'queue': 'default'},
+    },
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+    task_default_retry_delay=5,
+    task_max_retries=3
+)

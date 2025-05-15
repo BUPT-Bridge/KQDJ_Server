@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-from .models import StatusTypeNum, ViewNum
+from .models import StatusTypeNum, ViewNum, FormUserRelation
 # Register your models here.
-admin.site.register([StatusTypeNum, ViewNum])
+admin.site.register([StatusTypeNum, ViewNum, FormUserRelation])

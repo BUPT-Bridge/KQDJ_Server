@@ -123,6 +123,7 @@ class MainFormManager(models.Manager):
                     content=content,
                     feedback_need=form_data.get("feedback_need", False),
                     audio=form_data.get("audio", None),
+                    Latitude_Longitude = form_data.get("Latitude_Longitude", None),
                     user_openid=user_openid,
                     feedback_status= 0 if status==False else 1
                 )
@@ -140,11 +141,9 @@ class MainFormManager(models.Manager):
         # 创建表单
         form = await create_form_sync()
         
-        # 执行 AI 分析
-        form_type, title, category = await sync_to_async(analyze_content)(content)
-        
-        # 更新表单信息
-        await sync_to_async(self.update_form_type_and_title)(form.id, form_type, title, category)
+        # 触发后台任务处理AI分析，不等待结果
+        from analysis.tasks import analyze_form_content_async
+        analyze_form_content_async.delay(form.id)
         
         # 返回序列化数据
         from .serializers import MainFormSerializerSimple

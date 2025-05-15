@@ -31,15 +31,7 @@ def store_old_category(sender, instance=None, **kwargs):
 @receiver([post_save, post_delete], sender=MainForm)
 def handle_mainform_change(sender, instance=None, created=False, **kwargs):
     """
-    当MainForm模型实例变化时，集中处理所有相关更新操作:
-    1. 更新统计数据
-    2. 更新表单用户关系
-    
-    Args:
-        sender: 发送信号的模型类
-        instance: MainForm的实例
-        created: 是否为新创建的实例
-        **kwargs: 其他参数
+    当MainForm模型实例变化时，集中处理所有相关更新操作
     """
     # 1. 处理状态和类别计数更新
     # 确定是否是删除操作
@@ -90,16 +82,18 @@ def handle_mainform_change(sender, instance=None, created=False, **kwargs):
     # 2. 处理表单用户关系更新 - 改为使用延迟处理
     if not is_delete and instance and instance.handle == UNHANDLED:  # 只处理未处理状态的表单
         try:
-            # 检查必要字段是否已经生成
-            if instance.category and instance.title:
-                # 如果已经有分类和标题，直接创建关系，但仅限于未处理状态
-                FormUserRelation.create_or_update_from_form(instance)
-            else:
-                # 否则，安排延迟任务创建关系
-                # 延迟5秒，等待主表单的字段被大模型生成
+            # 检查是否为更新category和title字段的操作
+            update_fields = kwargs.get('update_fields')
+            fields_updated = created or (update_fields is None) or (
+                update_fields and ('category' in update_fields or 'title' in update_fields)
+            )
+            
+            # 只有在更新了这些字段后，才触发创建关系
+            if fields_updated and instance.category and instance.title:
+                # 设置延迟，避免与AI分析任务冲突
                 create_form_user_relation_async.apply_async(
                     args=[instance.pk], 
-                    countdown=5
+                    countdown=3  # 延迟3秒，避免冲突
                 )
         except Exception as e:
             logger.error(f"更新FormUserRelation时出错: {str(e)}")

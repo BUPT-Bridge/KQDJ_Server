@@ -13,7 +13,6 @@ class ViewNumStatsView(APIView):
     """
     访问量和注册量统计的API视图
     """
-    @method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER]))
     def get(self, request):
         """
         获取近七天的访问量和注册量统计数据
@@ -130,16 +129,11 @@ class TopUnhandledFormView(APIView):
         for form in unhandled_forms:
             # 获取表单序列化数据
             form_data = MainFormSerializer(form).data
-            
             # 获取关联的解决方案建议
             relation = FormUserRelation.objects.filter(main_form=form).first()
-            suggestion = None
-            if relation and relation.solution_suggestion:
-                suggestion = relation.solution_suggestion
-                
-            # 将表单数据和解决方案建议合并
-            form_data['solution_suggestion'] = suggestion
-            result.append(form_data)
+            from .serializers import EventsSerializer
+            ser_data = EventsSerializer(relation).data
+            result.append(ser_data)
             
         return {
             'message': '获取成功',

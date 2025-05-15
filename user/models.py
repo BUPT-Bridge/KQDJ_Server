@@ -4,6 +4,7 @@ from imagekit.processors import ResizeToFill
 from utils.constance import *
 from .utils.rename import avatar_upload_path
 from .manager import UsersManager
+import hashlib  # 添加 hashlib 导入
 
 _AVATAR_WIDTH = 120
 _AVATAR_HEIGHT = 120
@@ -51,6 +52,12 @@ class Users(models.Model):
                 raise ValueError("至少提供一个需要更新的字段")
             
             for field, value in valid_fields.items():
+                # 如果是密码字段，使用 MD5 加密
+                if field == 'password':
+                    md5 = hashlib.md5()
+                    md5.update(value.encode('utf-8'))
+                    value = md5.hexdigest()
+                    
                 setattr(self, field, value)
                 # 对于文件字段，返回文件名而不是文件对象
                 if field == 'avatar':
@@ -69,4 +76,3 @@ class Users(models.Model):
 
     def __str__(self):
         return f"{self.username} - {self.openid} - {self.phone} - {self.permission_level}"
-    

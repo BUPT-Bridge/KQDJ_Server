@@ -45,7 +45,7 @@ make env
 
 ```cmd
 sudo apt install redis-server
-sudo systemctl status redis-server
+sudo service redis-server start
 ```
 在根目录下先执行celery -A KQTX_backend worker -l info
 启用缓存区

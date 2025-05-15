@@ -31,14 +31,23 @@ class UsersManager(models.Manager):
         """获取某个的用户"""
         return self.get_queryset().filter(openid=openid)
     
+    def phone_fliter(self, phone):
+        """获取某个的用户"""
+        return self.get_queryset().filter(phone=phone)
+    
+    def phone_certain_fliter(self, phone):
+        result = self.get_queryset().filter(phone=phone).values_list('openid', flat=True).first()
+        return result 
+
     def permission_fliter(self,permission_level):
         """获取不同权限的管理员"""
         return self.get_queryset().filter(permission_level=permission_level)
     
-    def get_password(self, openid):
+    def get_certain_password(self, phone):
         """获取某个用户的密码的表单"""
-        return self.filter(openid=openid).get('password')
-    
+        result = self.get_queryset().filter(phone=phone).values_list('password', flat=True).first()
+        return result 
+
     def get_enrollment(self):
         """获取今天注册的用户数量"""
         from datetime import datetime, time

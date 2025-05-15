@@ -35,6 +35,9 @@ def create_form_user_relation_async(form_pk):
     from proceed.models import MainForm
     from .models import FormUserRelation
     from proceed.utils.choice import UNHANDLED
+    import logging
+    
+    logger = logging.getLogger(__name__)
     
     try:
         # 重新获取表单实例，确保获取最新状态
@@ -53,17 +56,9 @@ def create_form_user_relation_async(form_pk):
             
         # 检查必要字段是否已经生成
         if not main_form.category or not main_form.title:
-            # 最多重试5次，防止无限循环
-            retry_count = int(getattr(create_form_user_relation_async.request, 'retries', 0))
-            if retry_count < 5:
-                logger.warning(f"表单 {main_form.uuidx} 的必要字段尚未生成，将重新安排任务 (尝试 {retry_count + 1}/5)")
-                # 如果字段仍未生成，再次延迟执行，延迟时间递增
-                create_form_user_relation_async.apply_async(
-                    args=[form_pk], 
-                    countdown=5 + retry_count * 2  # 延迟时间随重试次数增加
-                )
-            else:
-                logger.error(f"表单 {main_form.uuidx} 在5次尝试后仍未生成必要字段，放弃处理")
+            # 如果字段仍未生成，可能是AI分析任务还未完成或失败
+            # 这种情况下，就不创建关系，依赖后续的signal触发
+            logger.warning(f"表单 {main_form.pk} 的必要字段尚未生成，不创建关系")
             return False
             
         # 创建或更新关系
@@ -71,7 +66,7 @@ def create_form_user_relation_async(form_pk):
         return bool(relation)
         
     except Exception as e:
-        logger.error(f"异步创建表单用户关系失败: {str(e)}")
+        logger.error(f"创建表单用户关系失败: {str(e)}")
         return False
 
 def update_view_counts_async():
@@ -114,3 +109,71 @@ def start_periodic_tasks():
     thread.daemon = True  # 设置为守护线程，这样它不会阻止程序退出
     thread.start()
     print("定时统计任务已启动，每10分钟更新一次访问量和注册量")
+
+@shared_task
+def analyze_form_content_async(form_id):
+    """
+    异步分析表单内容并更新表单信息
+    """
+    from proceed.models import MainForm
+    from proceed.utils.analyze_content import analyze_content
+    from proceed.manager import MainFormManager
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # 获取表单
+        main_form = MainForm.objects.filter(pk=form_id).first()
+        
+        if not main_form:
+            logger.error(f"找不到ID为{form_id}的MainForm实例")
+            return False
+        
+        # 分析内容
+        logger.info(f"开始分析表单 {form_id} 的内容")
+        form_type, title, category = analyze_content(main_form.content)
+        
+        # 更新表单信息
+        logger.info(f"更新表单 {form_id} 的类型和标题: {form_type}, {title}, {category}")
+        MainForm.query_manager.update_form_type_and_title(
+            form_id, form_type, title, category
+        )
+        
+        # 表单更新后，信号会自动触发create_form_user_relation_async任务
+        # 不需要在这里明确调用
+        
+        return True
+    except Exception as e:
+        logger.error(f"异步分析表单内容失败: {str(e)}")
+        return False
+
+@shared_task
+def generate_solution_suggestion_async(relation_id):
+    """
+    异步生成解决方案建议
+    """
+    from .models import FormUserRelation
+    import logging
+    import time
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # 获取关系对象
+        relation = FormUserRelation.objects.get(id=relation_id)
+        
+        # 添加延迟，避免与其他大模型调用冲突
+        time.sleep(3)
+        
+        # 生成解决方案建议
+        logger.info(f"开始为表单 {relation.main_form_id} 生成解决方案建议")
+        
+        # 调用原方法生成建议
+        relation.generate_solution_suggestion()
+        
+        logger.info(f"表单 {relation.main_form_id} 的解决方案建议生成完成")
+        return True
+    except Exception as e:
+        logger.error(f"生成解决方案建议失败: {str(e)}")
+        return False

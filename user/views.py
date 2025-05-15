@@ -8,6 +8,7 @@ from utils.constance import *
 from .utils.request_proceesor import request_proceesor
 from .utils.validate import VerificationCode
 from utils.wx_web_login import get_access_token
+import hashlib  # 添加 hashlib 导入
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
 # 例如：return Response({'message': '操作成功'})
@@ -80,6 +81,30 @@ class UserInfo(APIView):
         user_data = Users.query_manager.self_fliter(openid).serialize()
         return user_data
     
+    def post(self, request):
+        return CustomResponse(self.login_code, request)
+    
+    def login_code(self, request):
+        # 获取请求数据
+        data = request.data
+        phone = data['phone']
+        password = data['password']
+        # 将密码进行MD5加密
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        encrypted_password = md5.hexdigest()
+        print('加密后的密码:', encrypted_password)
+        user = Users.query_manager.phone_fliter(phone)
+        if not user.exists():
+            raise Exception('用户不存在')
+        print(Users.query_manager.get_certain_password(phone))
+        if Users.query_manager.get_certain_password(phone) == encrypted_password:
+            return {'message': '登录成功',
+                'token': auth.generate_token(Users.query_manager.phone_certain_fliter(phone))}
+        else:
+            return {'message': '密码错误'}
+    
+    
 class AdminList(APIView):
     @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
     def get(self, request):
@@ -89,6 +114,11 @@ class AdminList(APIView):
     def put(self, request):
         openid = request.openid
         return CustomResponse(self._adjust_admin_list, request, openid)
+    
+    @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
+    def delete(self, request):
+        openid = request.openid
+        return CustomResponse(self._delete_admin, openid)
     
     def _get_admin_list(self, request):
         # 获取管理员列表
@@ -103,6 +133,14 @@ class AdminList(APIView):
         data = request_proceesor(request)
         reply = Users.objects.get(openid=openid).update_user(data=data)
         return reply
+    
+    def _delete_admin(self, openid):
+        # 删除管理员
+        user = Users.query_manager.self_fliter(openid)
+        if not user.exists():
+            raise Exception('用户不存在')
+        user.delete()
+        return { 'data': '删除成功' }
     
 class ChangePermission(APIView):
     
@@ -138,24 +176,6 @@ class WxWebLoginWeb(APIView):
         return CustomResponse(self._web_login_or_register, request)
     
     def _web_login_or_register(self, request) -> dict:
-        # 获取请求数据
-        data = request.data
-        code = data.get('code')
-        
-        if not code:
-            raise Exception('缺少必要参数code')
-            
-        # 使用code获取access_token和openid
-        wx_info = get_access_token(code)
-        openid = wx_info.get('openid')
-            
-        if not openid:
-            raise Exception('获取openid失败')
-                
-            # 调用LoginTest中的登录或注册逻辑
-        login_test = LoginTest()
-        mock_request = request
-        mock_request.data = {'openid': openid}
-        result = login_test._login_or_register(mock_request)
-            
+        login_test = LoginOrRegisterWechat()
+        result = login_test._login_or_register(request)
         return result

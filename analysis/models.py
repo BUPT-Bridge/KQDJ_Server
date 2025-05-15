@@ -252,6 +252,8 @@ class FormUserRelation(models.Model):
     username = models.CharField(max_length=50, verbose_name='用户名称', null=True, blank=True)
     category = models.CharField(max_length=50, verbose_name='表单分类', null=True, blank=True)
     content = models.TextField(verbose_name='投诉内容', null=True, blank=True)
+    title = models.CharField(max_length=100, verbose_name='标题', null=True, blank=True)
+    Latitude_Longitude = models.CharField(max_length=20, null=True, blank=True, verbose_name='经纬度')
     
     # AI生成的建议
     solution_suggestion = models.TextField(verbose_name='解决方案建议', null=True, blank=True)
@@ -284,8 +286,7 @@ class FormUserRelation(models.Model):
     def create_or_update_from_form(cls, main_form):
         """
         从MainForm创建或更新FormUserRelation实例
-        优化了字段初始化和更新逻辑，减少了重复代码
-        只处理未处理状态的表单
+        不再直接触发解决方案生成
         """
         from proceed.utils.choice import UNHANDLED
         
@@ -309,7 +310,9 @@ class FormUserRelation(models.Model):
             base_fields = {
                 'serial_number': main_form.serial_number,
                 'content': main_form.content,
-                'category': main_form.category
+                'category': main_form.category,
+                'title': main_form.title,
+                'Latitude_Longitude': main_form.Latitude_Longitude
             }
             
             # 查找关联的用户
@@ -324,12 +327,12 @@ class FormUserRelation(models.Model):
                 defaults=base_fields
             )
             
-            # 等待MainForm中大模型完成后再生成建议
-            # 修改生成逻辑，避免冲突
+            # 提交生成解决方案建议的任务，而不是立即执行
             if created or 'content' in base_fields:
-                logger.info(f"为表单 {main_form.pk} 生成解决建议")
-                relation.generate_solution_suggestion()
-            
+                from .tasks import generate_solution_suggestion_async
+                logger.info(f"为表单 {main_form.pk} 安排生成解决建议任务")
+                generate_solution_suggestion_async.delay(relation.id)
+        
             return relation
         except Exception as e:
             logger.error(f"创建或更新FormUserRelation失败: {str(e)}")
