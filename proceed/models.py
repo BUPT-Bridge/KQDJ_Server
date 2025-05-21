@@ -88,7 +88,7 @@ class MainForm(models.Model):
     def get_datetime(self):
         return datetime.fromtimestamp(self.upload_time)
 
-    def update_form(self, **kwargs):
+    def update_form(self, handle_images=None, **kwargs):
         """
         :param kwargs: 可包含以下字段（每次调用只能包含其中一个）：
             - handle_info: dict 管理员处理信息
@@ -120,6 +120,13 @@ class MainForm(models.Model):
                 self.handle = HANDLED
             else:
                 self.handle = PROCESSING
+
+            if handle_images:
+                for image in handle_images:
+                    HandleImageModel.objects.create(
+                        main_form=self,
+                        image=image
+                    )
 
         # 更新回访信息
         feedback_info = kwargs.get("feedback_info", {})
@@ -247,3 +254,33 @@ class ImageModel(models.Model):
         verbose_name = "表单图片"
         verbose_name_plural = "表单图片"
 
+
+class HandleImageModel(models.Model):
+    # 可以通过 related_name 参数指定反向查询的名称，可以通过main_form_instance.images.all() 来获取所有与该 MainForm 实例关联的 ImageModel 实例。
+    main_form = models.ForeignKey(
+        MainForm,
+        on_delete=models.CASCADE,
+        related_name="handle_images",
+        verbose_name="关联表单",
+    )
+    image = ProcessedImageField(
+        upload_to=get_image_path, format="WEBP", options={"quality": 40}
+    )
+    source = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default="admin", verbose_name="来源"
+    )
+    upload_time = models.BigIntegerField(verbose_name="上传时间")
+
+    def save(self, *args, **kwargs):
+        set_timestamp(self)
+        super().save(*args, **kwargs)
+
+    def get_datetime(self):
+        return datetime.fromtimestamp(self.upload_time)
+
+    def __str__(self):
+        return f"从该表单：{self.main_form.uuidx} 获取处理反馈图片, 图片：{self.image}"
+
+    class Meta:
+        verbose_name = "表单处理反馈图片"
+        verbose_name_plural = "表单处理反馈图片"

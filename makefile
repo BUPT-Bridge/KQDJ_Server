@@ -21,7 +21,7 @@ init: env
 	python manage.py createsuperuser --noinput --username "$$USER" --email "$$USER@localhost"
 	@echo "✅ 超级用户创建成功"
 
-run: env
+run: migrate
 	python manage.py runserver 0.0.0.0:8000
 
 clean:

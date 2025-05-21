@@ -50,12 +50,15 @@ class UsersManager(models.Manager):
 
     def get_enrollment(self):
         """获取今天注册的用户数量"""
-        from datetime import datetime, time
-        today = datetime.now().date()
-        today_start = datetime.combine(today, time.min)
-        today_end = datetime.combine(today, time.max)
-        
-        return self.get_queryset().filter(created_at__range=(today_start, today_end)).count()
+        from django.utils import timezone
+        import datetime
+        # 使用timezone.now()获取当前时间（带时区）
+        today = timezone.now().date()
+        # 将日期转换为带时区的datetime
+        start_of_day = timezone.make_aware(datetime.datetime.combine(today, datetime.time.min))
+        end_of_day = timezone.make_aware(datetime.datetime.combine(today, datetime.time.max))
+        # 使用带时区的datetime进行查询
+        return self.get_queryset().filter(created_at__range=(start_of_day, end_of_day)).count()
 
     def paginate(self, request, queryset=None):
         """

@@ -74,7 +74,6 @@ class UserFormFunctions(APIView):
     def _update_form(self, request, is_pk):
         evaluate_info = request.data
         form_evaulation = MainForm.objects.filter(uuidx=is_pk).first()
-        form_evaulation.update_form(evaluation_info=evaluate_info)
         from .serializers import MainFormSerializer
 
         return {"message": "评价成功", "data": MainFormSerializer(form_evaulation).data}
@@ -122,14 +121,14 @@ class AdminFormFunctions(APIView):
 
     def _handle_a_form(self, request, is_pk):
         update_info = request.data
-        openid = request.openid
+        form_images = request.FILES.getlist("handle_images")
         form = MainForm.objects.filter(uuidx=is_pk).first()
 
         if not form:
             raise Exception("表单不存在")
         # update_info["admin_openid"] = openid
         # 更新表单状态和管理员处理信息
-        form.update_form(handle_info=update_info, openid=openid)
+        form.update_form(handle_images=form_images, handle_info=update_info)
 
         from .serializers import MainFormSerializer
 
