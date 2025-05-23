@@ -8,5 +8,4 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'password': {'write_only': True},
-            'permission_level': {'write_only': True},  # 权限等级只读
         }

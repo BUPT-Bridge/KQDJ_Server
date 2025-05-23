@@ -86,7 +86,7 @@ class AdminFormFunctions(APIView):
     )
     def get(self, request):
         is_pk = request.GET.get("uuid", None)  # 无pk无finish为历史记录
-        finished = request.GET.get("finish", 0)
+        finished = request.GET.get("finish", 3)
         if not is_pk:
             # 获取所有表单
             return CustomResponse(
@@ -103,7 +103,10 @@ class AdminFormFunctions(APIView):
         return form.serialize()
 
     def _admin_get_multi_forms(self, request, finished):
-        form = MainForm.query_manager.get_queryset().filter(handle=finished)
+        if finished == 3:
+            form = MainForm.query_manager.get_queryset()
+        else:
+            form = MainForm.query_manager.get_queryset().filter(handle=finished)
         if not form:
             raise Exception("表单不存在")
         return form.order_by("-upload_time").paginate(request, simple=True)
@@ -141,34 +144,27 @@ class AdminFormFunctions(APIView):
 
     def _delete_a_form(self, request):
         # 从请求体中获取要删除的表单ID列表
-        form_ids = request.data.get("form_uuids", [])
+        form_ids = request.GET.get("uuid", None)
 
         if not form_ids:
             raise Exception("未指定要删除的表单UUID")
 
-        # 记录删除结果
-        deletion_results = {"successful": [], "failed": []}
-
         # 删除表单
-        for form_id in form_ids:
-            try:
-                form = MainForm.objects.get(uuidx=form_id)
-                form_info = {
-                    "uuid": form_id,
-                    "title": getattr(form, "title", f"表单-{form_id}"),
-                }
-                form.delete()
-                deletion_results["successful"].append(form_info)
-            except MainForm.DoesNotExist:
-                deletion_results["failed"].append(
-                    {"id": form_id, "reason": "表单不存在"}
-                )
-            except Exception as e:
-                deletion_results["failed"].append({"id": form_id, "reason": str(e)})
+        try:
+            form = MainForm.objects.get(uuidx=form_ids)
+            form_info = {
+                "uuid": form_ids,
+                "title": getattr(form, "title", f"表单-{form_ids}"),
+            }
+            form.delete()
+        except MainForm.DoesNotExist:
+            raise Exception("表单不存在")
+        except Exception as e:
+            raise Exception(f"删除表单失败: {str(e)}")
 
         return {
-            "message": f"成功删除{len(deletion_results['successful'])}个表单，失败{len(deletion_results['failed'])}个",
-            "data": deletion_results,
+            "message": "表单删除成功",
+            "data": form_info,
         }
 
 
@@ -178,18 +174,14 @@ class AdminFormHandleFunctions(APIView):
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def get(self, request):
-            return CustomResponse(self._admin_get_multi_forms, request)
+        return CustomResponse(self._admin_get_multi_forms, request)
 
     def _admin_get_multi_forms(self, request):
         form = MainForm.query_manager.feedback_needed()
         if not form:
             raise Exception("表单不存在")
-        return (
-            form
-            .order_by("-upload_time")
-            .paginate(request, simple=True)
-        )
-    
+        return form.order_by("-upload_time").paginate(request, simple=True)
+
     # 处理一个表单
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
@@ -214,8 +206,9 @@ class AdminFormHandleFunctions(APIView):
         from .serializers import MainFormSerializer
 
         return {"message": "表单处理成功", "data": MainFormSerializer(form).data}
-    
-class List2Excel(APIView):    
+
+
+class List2Excel(APIView):
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
@@ -225,6 +218,7 @@ class List2Excel(APIView):
         end_date = data.get("end_time", "")
         try:
             from .utils.handle_timestamp import process_date_range
+
             start_timestamp, end_timestamp = process_date_range(start_date, end_date)
             return MainForm.export_to_excel(start_timestamp, end_timestamp)
 

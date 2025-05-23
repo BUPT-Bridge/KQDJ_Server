@@ -9,3 +9,5 @@ media
 .env
 create_view_stats.py
 .VSCode*
+/static/
+/staticfiles/
