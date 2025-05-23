@@ -251,10 +251,11 @@ class FormUserRelation(models.Model):
     serial_number = models.CharField(max_length=20, verbose_name='表单序号', null=True, blank=True)
     username = models.CharField(max_length=50, verbose_name='用户名称', null=True, blank=True)
     category = models.CharField(max_length=50, verbose_name='表单分类', null=True, blank=True)
-    content = models.TextField(verbose_name='投诉内容', null=True, blank=True)
-    title = models.CharField(max_length=100, verbose_name='标题', null=True, blank=True)
     Latitude_Longitude = models.CharField(max_length=20, null=True, blank=True, verbose_name='经纬度')
-    
+    address = models.CharField(max_length=255, null=True, blank=True, verbose_name='地址')
+    avatar = models.CharField(max_length=255, null=True, blank=True, verbose_name='用户头像')
+    content = models.TextField(verbose_name='表单内容', null=True, blank=True)
+
     # AI生成的建议
     solution_suggestion = models.TextField(verbose_name='解决方案建议', null=True, blank=True)
     
@@ -309,10 +310,10 @@ class FormUserRelation(models.Model):
             # 准备基本字段数据，用于创建和更新
             base_fields = {
                 'serial_number': main_form.serial_number,
-                'content': main_form.content,
                 'category': main_form.category,
-                'title': main_form.title,
-                'Latitude_Longitude': main_form.Latitude_Longitude
+                'Latitude_Longitude': main_form.Latitude_Longitude,
+                'address': main_form.address,
+                'content': main_form.content,
             }
             
             # 查找关联的用户
@@ -320,6 +321,8 @@ class FormUserRelation(models.Model):
             if user:
                 base_fields['user'] = user
                 base_fields['username'] = user.username
+                base_fields['avatar'] = user.avatar.url if user.avatar else None
+                
             
             # 根据表单查找或创建关系记录，使用准备好的字段
             relation, created = cls.objects.update_or_create(

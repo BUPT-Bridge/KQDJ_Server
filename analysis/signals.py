@@ -6,6 +6,7 @@ import logging
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from proceed.models import MainForm
+from user.models import Users
 from proceed.utils.choice import UNHANDLED
 from .models import StatusTypeNum, FormUserRelation
 from .tasks import update_category_counts_async, create_form_user_relation_async
@@ -104,3 +105,32 @@ def handle_mainform_change(sender, instance=None, created=False, **kwargs):
             logger.info(f"已删除非未处理状态表单的关系记录: {instance.pk}")
         except Exception as e:
             logger.error(f"清理非未处理表单关系时出错: {str(e)}")
+
+
+# 新的信号处理器，监听Users模型更新
+@receiver(post_save, sender=Users)
+def sync_user_avatar(sender, instance=None, **kwargs):
+    """
+    当用户信息更新时，同步更新关联的FormUserRelation记录中的头像
+    """
+    if not instance:
+        return
+        
+    try:
+        # 检查用户是否有头像
+        if instance.avatar:
+            # 更新所有与该用户关联的FormUserRelation记录
+            updated = FormUserRelation.objects.filter(user=instance).update(
+                avatar=instance.avatar.url,  # 保存头像URL
+                username=instance.username or ''  # 同时更新用户名，确保一致性
+            )
+            logger.info(f"已同步用户 {instance.pk} 的头像到 {updated} 个关联记录")
+        else:
+            # 如果用户没有头像，清空关联记录的头像
+            updated = FormUserRelation.objects.filter(user=instance).update(
+                avatar="",
+                username=instance.username or ''
+            )
+            logger.info(f"已清空用户 {instance.pk} 的头像信息，影响 {updated} 个关联记录")
+    except Exception as e:
+        logger.error(f"同步用户头像时出错: {str(e)}")

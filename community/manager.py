@@ -179,8 +179,9 @@ class TweetPageManager(models.Manager):
         """获取推文列表"""
         tweets = self.get_queryset().all().order_by('-id')
         if not tweets:
-            raise ValueError("没有风采推文")
-        return self.paginate(request, tweets)
+            return []
+        else:
+            return self.paginate(request, tweets)
     
     def delete_tweet(self, pk: int) -> dict:
         """删除指定推文"""

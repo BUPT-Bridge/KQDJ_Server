@@ -39,7 +39,7 @@ class MainForm(models.Model):
     phone = models.CharField(max_length=20, verbose_name="电话号码")
     name = models.CharField(max_length=50, verbose_name="姓名")
     address = models.TextField(verbose_name="地址")
-    Latitude_Longitude = models.CharField(max_length=20, null=True, blank=True, verbose_name="经纬度")
+    Latitude_Longitude = models.CharField(max_length=20, null=True, blank=True, verbose_name="经纬度", default="116.397128,39.916527")
     title = models.CharField(max_length=100, null=True, blank=True, verbose_name="标题")
     content = models.TextField(verbose_name="内容")
     feedback_need = models.BooleanField(default=False, verbose_name="是否需要回访")

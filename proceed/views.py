@@ -85,7 +85,7 @@ class AdminFormFunctions(APIView):
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def get(self, request):
-        is_pk = request.GET.get("uuid", None)
+        is_pk = request.GET.get("uuid", None)  # 无pk无finish为历史记录
         finished = request.GET.get("finish", 0)
         if not is_pk:
             # 获取所有表单

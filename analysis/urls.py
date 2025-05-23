@@ -6,10 +6,13 @@ e.g.  path("", views.index, name="index")
 
 """
 from django.urls import path
-from .views import StatusCountView, ViewNumStatsView, TopUnhandledFormView
+from .views import StatusCountView, ViewNumStatsView, TopUnhandledFormView, GetUserHandle, GetLocation
 
 urlpatterns = [
     path('status', StatusCountView.as_view(), name='status_counts'),
     path('view-stats', ViewNumStatsView.as_view(), name='view_stats'),
     path('event', TopUnhandledFormView.as_view(), name='event'),
+    path('user_form', GetUserHandle.as_view(), name='user_form'),
+    path('user_location',GetLocation.as_view(), name='user_location'),
+    
 ]
