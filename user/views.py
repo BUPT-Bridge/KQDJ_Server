@@ -187,11 +187,13 @@ class LoginOrRegisterWeb(APIView):
         wx_info = wx_login(code) # 获取微信openid
         openid = wx_info['openid'] # 检查用户是否已存在
         if Users.objects.filter(openid=openid).exists():
-            SaltManager.add_salt_openid(salt, openid)
+            salt_manager = SaltManager()
+            salt_manager.add_salt_openid(salt, openid)
             return self._login_from_wechat(openid)
         else:
             Users.objects.create(openid=openid)
-            SaltManager.add_salt_openid(salt, openid)
+            salt_manager = SaltManager()
+            salt_manager.add_salt_openid(salt, openid)
         return {
                 'message': '注册成功',
                 'token': auth.generate_token(openid)
@@ -213,7 +215,8 @@ class LoginOrRegisterWeb(APIView):
             raise Exception('salt不能为空')
         
         # 从JSON文件中获取openid
-        openid = SaltManager.get_openid_by_salt(salt)
+        salt_manager = SaltManager()
+        openid = salt_manager.get_openid_by_salt(salt)
         
         if openid == "not_found":
             return {
