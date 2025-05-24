@@ -11,3 +11,5 @@ create_view_stats.py
 .VSCode*
 /static/
 /staticfiles/
+*.json
+user/utils/wxacode

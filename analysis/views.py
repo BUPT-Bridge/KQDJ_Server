@@ -162,7 +162,6 @@ class GetUserHandle(APIView):
         result = []
         for form in handled_forms:
             # 获取关联的解决方案建议
-            print(form)
             relation = FormUserRelation.objects.filter(main_form=form).first()
             from .serializers import UserInfoSerializer
             ser_data = UserInfoSerializer(relation).data

@@ -21,6 +21,7 @@ class UserFormFunctions(APIView):
             user_openid = request.openid
             form_data = request.data
             form_images = request.FILES.getlist("form_images")
+            print(form_images)
             source = "user" if permission_level == 0 else "admin"
 
             form = await self._create_form(

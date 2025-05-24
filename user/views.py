@@ -7,7 +7,10 @@ from utils.auth import auth
 from utils.constance import *
 from .utils.request_proceesor import request_proceesor
 from .utils.validate import VerificationCode
-from utils.wx_web_login import get_access_token
+from .utils.salt_manager import SaltManager
+from .utils.web_login import get_wxacode
+from django.http import HttpResponse
+import time
 import hashlib  # 添加 hashlib 导入
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
@@ -167,15 +170,85 @@ class ChangePermission(APIView):
         Users.query_manager.self_fliter(openid).update(permission_level=ADMIN_USER)
         return reply
 
-    
-class WxWebLoginWeb(APIView):
-    """
-    处理微信网页直接POST code登录的接口
-    """
+
+
+class LoginOrRegisterWeb(APIView):
+    # 从微信小程序注册/登录账号
     def post(self, request):
-        return CustomResponse(self._web_login_or_register, request)
+        return CustomResponse(self._login_or_register,request)
     
-    def _web_login_or_register(self, request) -> dict:
-        login_test = LoginOrRegisterWechat()
-        result = login_test._login_or_register(request)
-        return result
+    def _login_or_register(self, request) -> dict:
+        # 获取请求数据
+        salt = request.GET.get('salt')
+        if not salt:
+            raise Exception('salt不能为空')
+        data = request.data
+        code = data['code'] # 获取code 如果没有code会报错
+        wx_info = wx_login(code) # 获取微信openid
+        openid = wx_info['openid'] # 检查用户是否已存在
+        if Users.objects.filter(openid=openid).exists():
+            SaltManager.add_salt_openid(salt, openid)
+            return self._login_from_wechat(openid)
+        else:
+            Users.objects.create(openid=openid)
+            SaltManager.add_salt_openid(salt, openid)
+        return {
+                'message': '注册成功',
+                'token': auth.generate_token(openid)
+            }
+    def _login_from_wechat(self,openid):
+        Users.objects.filter(openid=openid)
+        return {
+            'message': '登录成功',
+            'token': auth.generate_token(openid)
+            }
+    
+    def get(self, request):
+        # data=self._login_or_register(request)
+        return CustomResponse(self._polling,request)
+    def _polling(self, request) -> dict:
+        # 获取请求数据
+        salt = request.GET.get('salt')
+        if not salt:
+            raise Exception('salt不能为空')
+        
+        # 从JSON文件中获取openid
+        openid = SaltManager.get_openid_by_salt(salt)
+        
+        if openid == "not_found":
+            return {
+            'message': '未找到对应的登录请求',
+            'code': 'not_found'
+        }
+        elif openid == "expired":
+            return {
+            'message': '登录请求已过期，请重新扫码',
+            'code': 'expired'
+        }
+        else:
+        # 找到有效的openid
+            return {
+            'message': '登录成功',
+            'token': auth.generate_token(openid)
+        }
+
+class WXACode(APIView):
+    """
+    获取微信小程序码
+    GET: 生成并返回带有指定salt的微信小程序码
+    """
+    def get(self, request):
+        # 获取请求参数中的salt
+        salt = request.GET.get('salt')
+        if not salt:
+            raise Exception('salt不能为空')
+        try:
+            # 调用get_wxacode获取小程序码二进制数据
+            qr_binary = get_wxacode(salt)
+            # 返回二进制图片数据，设置正确的content-type
+            return HttpResponse(qr_binary, content_type='image/png')
+        except Exception as e:
+            # 发生错误时返回错误信息
+            return HttpResponse(str(e), status=500)
+
+
