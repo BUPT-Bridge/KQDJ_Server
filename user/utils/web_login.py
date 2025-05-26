@@ -13,7 +13,7 @@ load_dotenv(dotenv_path)
 
 # 存储 access_token 的文件路径
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'access_token.json')
-PATH = "pages/complainforms/index"
+PATH = "pages/weblogin/index"
 SAVE_PATH = "./"
 APPID = os.getenv("APP_ID")
 APP_SECRET = os.getenv("APP_SECRET")
@@ -127,7 +127,7 @@ def get_wxacode(salt: str, env_version: str = "trial") -> BytesIO:
     
     # 构建请求 URL
     url = f"https://api.weixin.qq.com/wxa/getwxacode?access_token={access_token}"
-    
+    print(f"{PATH}?salt={salt}")
     # 构建请求体
     data = {
         "path": f"{PATH}?salt={salt}",

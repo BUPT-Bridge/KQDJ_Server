@@ -31,6 +31,12 @@ class UsersManager(models.Manager):
         """获取某个的用户"""
         return self.get_queryset().filter(openid=openid)
     
+    def get_permission_level(self, openid):
+        return self.get_queryset().filter(openid=openid).values_list('permission_level', flat=True).first()
+    
+    def get_permission_level_phone(self,phone):
+        return self.get_queryset().filter(phone=phone).values_list('permission_level', flat=True).first()
+
     def phone_fliter(self, phone):
         """获取某个的用户"""
         return self.get_queryset().filter(phone=phone)
