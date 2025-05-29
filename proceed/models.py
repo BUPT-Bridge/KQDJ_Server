@@ -5,7 +5,6 @@ from .manager import MainFormManager
 import time
 from .utils.path_processor import get_image_path
 from .utils.choice import *
-from .utils.generate_uuid import generate_custom_uuid
 from .utils.sync_feedback_status import sync_feedback_status
 from .utils import *
 import uuid
@@ -232,9 +231,7 @@ class ImageModel(models.Model):
         related_name="images",
         verbose_name="关联表单",
     )
-    image = ProcessedImageField(
-        upload_to=get_image_path, format="WEBP", options={"quality": 40}
-    )
+    image = models.CharField(max_length=255, verbose_name="图片路径")
     source = models.CharField(
         max_length=20, choices=SOURCE_CHOICES, default="user", verbose_name="来源"
     )
@@ -263,9 +260,7 @@ class HandleImageModel(models.Model):
         related_name="handle_images",
         verbose_name="关联表单",
     )
-    image = ProcessedImageField(
-        upload_to=get_image_path, format="WEBP", options={"quality": 40}
-    )
+    image = models.CharField(max_length=255, verbose_name="处理图片路径")
     source = models.CharField(
         max_length=20, choices=SOURCE_CHOICES, default="admin", verbose_name="来源"
     )
@@ -284,3 +279,30 @@ class HandleImageModel(models.Model):
     class Meta:
         verbose_name = "表单处理反馈图片"
         verbose_name_plural = "表单处理反馈图片"
+
+
+class AllImageModel(models.Model):
+    """
+    用于存储所有图片的模型
+    """
+    image = ProcessedImageField(
+        upload_to=get_image_path, format="WEBP", options={"quality": 40}
+    )
+    source = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default="admin", verbose_name="来源"
+    )
+    upload_time = models.BigIntegerField(verbose_name="上传时间")
+
+    def save(self, *args, **kwargs):
+        set_timestamp(self)
+        super().save(*args, **kwargs)
+
+    def get_datetime(self):
+        return datetime.fromtimestamp(self.upload_time)
+
+    def __str__(self):
+        return f"图片：{self.image}"
+
+    class Meta:
+        verbose_name = "所有图片"
+        verbose_name_plural = "所有图片"

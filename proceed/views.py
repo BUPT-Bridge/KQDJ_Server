@@ -2,7 +2,7 @@ from utils.auth import auth
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from utils.response import CustomResponse, CustomResponseSync
-from .models import MainForm
+from .models import MainForm, AllImageModel
 import asyncio
 from utils.constance import *
 
@@ -20,7 +20,7 @@ class UserFormFunctions(APIView):
             permission_level = request.permission_level
             user_openid = request.openid
             form_data = request.data
-            form_images = request.FILES.getlist("form_images")
+            form_images = request.data.get("form_images",[])
             print(form_images)
             source = "user" if permission_level == 0 else "admin"
 
@@ -75,8 +75,8 @@ class UserFormFunctions(APIView):
     def _update_form(self, request, is_pk):
         evaluate_info = request.data
         form_evaulation = MainForm.objects.filter(uuidx=is_pk).first()
+        form_evaulation.update_form(evaluate_info)  # 更新表单状态为已评价
         from .serializers import MainFormSerializer
-
         return {"message": "评价成功", "data": MainFormSerializer(form_evaulation).data}
 
 
@@ -125,7 +125,7 @@ class AdminFormFunctions(APIView):
 
     def _handle_a_form(self, request, is_pk):
         update_info = request.data
-        form_images = request.FILES.getlist("handle_images")
+        form_images = request.data.get("handle_images",[])
         form = MainForm.objects.filter(uuidx=is_pk).first()
 
         if not form:
@@ -196,17 +196,49 @@ class AdminFormHandleFunctions(APIView):
 
     def _handle_a_form(self, request, is_pk):
         update_info = request.data
+        form_images = request.data.get("handle_images", [])
         form = MainForm.objects.filter(uuidx=is_pk).first()
 
         if not form:
             raise Exception("表单不存在")
 
         # 更新表单状态和管理员处理信息
-        form.update_form(feedback_info=update_info)
+        form.update_form(handle_images=form_images, feedback_info=update_info)
 
         from .serializers import MainFormSerializer
 
         return {"message": "表单处理成功", "data": MainFormSerializer(form).data}
+
+class ImageUploadAPI(APIView):
+    """
+    图片上传接口
+    POST: 上传图片并返回保存路径
+    """
+    @method_decorator(auth.token_required)
+    def post(self, request):
+        return CustomResponse(self._upload_image, request)
+        
+    def _upload_image(self, request):
+        openid = request.openid
+        # 检查是否有文件上传
+        if not request.FILES or 'file' not in request.FILES:
+            raise Exception("没有找到上传的图片")
+            
+        image_file = request.FILES['file']
+        from user.models import Users
+        user_permission = Users.query_manager.get_permission_level(openid)
+        source = "admin" if user_permission > 0 else "user"
+        # 创建并保存图片
+        image_model = AllImageModel(image=image_file,source=source)
+        image_model.save()
+        
+        # 获取保存的路径
+        image_path = image_model.image.url if hasattr(image_model.image, 'url') else str(image_model.image)
+        
+        return {
+            "path": image_path,
+            "message": "图片上传成功"
+        }
 
 
 class List2Excel(APIView):
