@@ -22,7 +22,7 @@ init: env
 	@echo "✅ 超级用户创建成功"
 
 run: migrate
-	python manage.py runserver 0.0.0.0:8000
+	python manage.py runserver 0.0.0.0:8051
 
 clean:
 	@echo "清理迁移文件..."
