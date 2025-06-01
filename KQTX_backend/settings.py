@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from kombu import Queue, Exchange 
+from utils.env_loader import env_vars
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,9 +29,6 @@ SECRET_KEY = "django-insecure-++dgo-^r7(4!pm26dv%w9vrwdx4z6a9es2_vo^3c18ov$ekfuh
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
-# 微信网页登录成功后跳转的前端页面URL
-FRONTEND_URL = "http://localhost:3000"
 
 
 # Application definition
@@ -143,8 +141,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Celery配置
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = env_vars.get_celery_broker_url()
+CELERY_RESULT_BACKEND = env_vars.get_celery_result_backend()
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

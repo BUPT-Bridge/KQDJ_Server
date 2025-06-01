@@ -1,18 +1,11 @@
 import requests
 from typing import Dict
-from dotenv import load_dotenv
 import os
 
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
-load_dotenv(dotenv_path)
-# 微信小程序配置
-WX_APP_ID = os.getenv("APP_ID")
-WX_APP_SECRET = os.getenv("APP_SECRET")
+from utils.env_loader import env_vars
+
+
 WX_LOGIN_URL = "https://api.weixin.qq.com/sns/jscode2session"
-
-if not WX_APP_ID or not WX_APP_SECRET:
-    raise ValueError("环境变量 APP_ID 或 APP_SECRET 未设置")  # 替换为你的实际APP ID和Secret
-
 
 def wx_login(code: str) -> Dict:
     """
@@ -23,8 +16,8 @@ def wx_login(code: str) -> Dict:
     try:
         # 准备请求参数
         params = {
-            'appid': WX_APP_ID,
-            'secret': WX_APP_SECRET,
+            'appid': env_vars.APP_ID,  # 从环境变量中获取小程序的 App ID
+            'secret': env_vars.APP_SECRET,  # 从环境变量中获取小程序的 App Secret
             'js_code': code,
             'grant_type': 'authorization_code'
         }

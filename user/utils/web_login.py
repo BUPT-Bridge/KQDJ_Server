@@ -3,22 +3,15 @@ import time
 import os
 import json
 from typing import Dict
-from dotenv import load_dotenv
 from io import BytesIO
-
-
-# 加载 .env 文件中的环境变量
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env')
-load_dotenv(dotenv_path)
+from utils.env_loader import env_vars
 
 # 存储 access_token 的文件路径
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'access_token.json')
 PATH = "pages/weblogin/index"
 SAVE_PATH = "./"
-APPID = os.getenv("APP_ID")
-APP_SECRET = os.getenv("APP_SECRET")
-if not APPID or not APP_SECRET:
-    raise ValueError("环境变量 APP_ID 或 APP_SECRET 未设置")  # 替换为你的实际APP ID和Secret
+APPID = env_vars.APP_ID
+APP_SECRET = env_vars.APP_SECRET
 
 def update_access_token_if_needed(force: bool = False) -> str:
     """

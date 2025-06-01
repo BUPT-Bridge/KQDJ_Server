@@ -1,10 +1,10 @@
 import requests
 from typing import Dict, Tuple, Optional
 import json
-import os
+from utils.env_loader import env_vars
 
 # 配置参数
-API_KEY = os.getenv("API_KEY")
+API_KEY = env_vars.API_KEY  # 从环境变量中获取API Key
 if not API_KEY:
     raise ValueError("环境变量 API_KEY 未设置")  # 替换为你的实际API Key
 MODEL = "glm-4-flash"  # 选择模型，如 glm-4, glm-4-long 等
