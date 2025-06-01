@@ -321,7 +321,7 @@ class FormUserRelation(models.Model):
             if user:
                 base_fields['user'] = user
                 base_fields['username'] = user.username
-                base_fields['avatar'] = user.avatar.url if user.avatar else None
+                base_fields['avatar'] = user.avatar
                 
             
             # 根据表单查找或创建关系记录，使用准备好的字段

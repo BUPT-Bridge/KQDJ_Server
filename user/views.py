@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from .models import Users
+from .models import Users, AllImageModel
 from django.utils.decorators import method_decorator
 from utils.wx_login import wx_login
 from utils.response import CustomResponse
@@ -10,7 +10,6 @@ from .utils.validate import VerificationCode
 from .utils.salt_manager import SaltManager
 from .utils.web_login import get_wxacode
 from django.http import HttpResponse
-import time
 import hashlib  # 添加 hashlib 导入
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
@@ -244,3 +243,32 @@ class WXACode(APIView):
         except Exception as e:
             # 发生错误时返回错误信息
             return HttpResponse(str(e), status=500)
+
+
+class ImageUploadAPI(APIView):
+    """
+    图片上传接口
+    POST: 上传图片并返回保存路径
+    """
+    @method_decorator(auth.token_required)
+    def post(self, request):
+        return CustomResponse(self._upload_image, request)
+        
+    def _upload_image(self, request):
+        openid = request.openid
+        # 检查是否有文件上传
+        if not request.FILES or 'file' not in request.FILES:
+            raise Exception("没有找到上传的图片")
+            
+        image_file = request.FILES['file']
+        # 创建并保存图片
+        image_model = AllImageModel(image=image_file, openid=openid)
+        image_model.save()
+        
+        # 获取保存的路径
+        image_path = image_model.image.url if hasattr(image_model.image, 'url') else str(image_model.image)
+        
+        return {
+            "path": image_path,
+            "message": "图片上传成功"
+        }

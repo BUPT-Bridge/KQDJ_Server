@@ -121,7 +121,7 @@ def sync_user_avatar(sender, instance=None, **kwargs):
         if instance.avatar:
             # 更新所有与该用户关联的FormUserRelation记录
             updated = FormUserRelation.objects.filter(user=instance).update(
-                avatar=instance.avatar.url,  # 保存头像URL
+                avatar=instance.avatar,  # 保存头像URL
                 username=instance.username or ''  # 同时更新用户名，确保一致性
             )
             logger.info(f"已同步用户 {instance.pk} 的头像到 {updated} 个关联记录")
