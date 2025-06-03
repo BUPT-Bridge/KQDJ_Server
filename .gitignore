@@ -14,3 +14,4 @@ create_view_stats.py
 *.json
 user/utils/wxacode
 celery.log
+static_collected

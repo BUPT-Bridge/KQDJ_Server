@@ -51,5 +51,5 @@ migrate:
 runall: 
 	@echo "启动Django服务和Celery worker..."
 	@celery -A KQTX_backend worker -l info > celery.log 2>&1 &
-	@python manage.py collectstatic
+	@python manage.py collectstatic --noinput
 	@python manage.py runserver 0.0.0.0:8051

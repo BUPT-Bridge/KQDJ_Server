@@ -34,4 +34,6 @@ urlpatterns = [
     path('api/proceed/', include('proceed.urls'), name='proceed'),
     
 
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
