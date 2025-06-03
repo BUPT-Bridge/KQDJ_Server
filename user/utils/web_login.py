@@ -101,7 +101,7 @@ def _save_token_to_cache(access_token: str, expires_at: float) -> None:
         json.dump(token_data, f)
 
 
-def get_wxacode(salt: str, env_version: str = "trial") -> BytesIO:
+def get_wxacode(salt: str, env_version: str = "release") -> BytesIO:
     """
     获取微信小程序码
     
