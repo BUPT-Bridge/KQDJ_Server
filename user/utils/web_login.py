@@ -140,17 +140,6 @@ def get_wxacode(salt: str, env_version: str = "trial") -> BytesIO:
         # 如果是二进制数据，表示成功获取图片
         print("获取小程序码成功")
         
-        # 可选：保存文件到本地用于调试
-        save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wxacode')
-        os.makedirs(save_dir, exist_ok=True)
-        timestamp = int(time.time())
-        save_path = os.path.join(save_dir, f'wxacode_{timestamp}.png')
-        
-        with open(save_path, 'wb') as f:
-            f.write(response.content)
-        
-        print(f"获取小程序码成功，已保存至: {save_path}")
-        
         # 直接返回二进制内容
         return response.content
     
