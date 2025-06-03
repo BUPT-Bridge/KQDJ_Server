@@ -81,7 +81,7 @@ class AllImageModel(models.Model):
     image = ProcessedImageField(
         upload_to=avatar_upload_path,
         processors=[ResizeToFill(_AVATAR_WIDTH, _AVATAR_HEIGHT)],
-        format='JPEG',
+        format='WEBP',
         options={'quality': 60},
         verbose_name='图片'
     )

@@ -143,7 +143,7 @@ class AdminList(APIView):
 
 class ChangePermission(APIView):
 
-    @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER]))
+    @method_decorator(auth.token_required(required_permission=[SUPER_ADMIN_USER,ADMIN_USER]))
     def get(self, _):
         return CustomResponse(self._generate_code)
 
