@@ -74,8 +74,9 @@ class UserFormFunctions(APIView):
 
     def _update_form(self, request, is_pk):
         evaluate_info = request.data
+        print(evaluate_info)
         form_evaulation = MainForm.objects.filter(uuidx=is_pk).first()
-        form_evaulation.update_form(evaluate_info)  # 更新表单状态为已评价
+        form_evaulation.update_form(evaluation_info=evaluate_info)  # 更新表单状态为已评价
         from .serializers import MainFormSerializer
         return {"message": "评价成功", "data": MainFormSerializer(form_evaulation).data}
 
