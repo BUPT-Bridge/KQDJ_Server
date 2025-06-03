@@ -1,7 +1,7 @@
-.PHONY: init run clean setup cleanall migrate env
+.PHONY: init run clean setup cleanall migrate
 .DEFAULT_GOAL := run
 
-init: env
+init:
 	@if [ -z "$$USER" ]; then echo "错误：必须设置 USER 环境变量" && exit 1; fi
 	@if [ -z "$$PASSWORD" ]; then echo "错误：必须设置 PASSWORD 环境变量" && exit 1; fi
 	@echo "✅ 环境变量 USER 和 PASSWORD 已设置"
@@ -38,19 +38,17 @@ cleanall: clean
 	@rm -rf db.sqlite3
 	@echo "✅ 清理完成"
 
-setup: env
+setup:
 	pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
 	@echo "✅ 依赖安装完成"
 
-migrate: env
+migrate:
 	@echo "执行数据库迁移..."
 	python manage.py makemigrations user proceed community analysis
 	python manage.py migrate
 	@echo "✅ 数据库迁移成功"
 
-env:
-	@echo "正在加载环境变量..."
-	@if [ ! -f .env ]; then echo "错误：.env 文件不存在"; exit 1; fi
-	@echo "当前环境变量值："
-	@(cat .env; echo) | while IFS='=' read -r key value; do if [ -n "$$key" ]; then echo "$$key=$$value"; export "$$key=$$value"; fi done
-	@echo "✅ 环境变量加载成功"
+runall: 
+	@echo "启动Django服务和Celery worker..."
+	@@celery -A KQTX_backend worker -l info > celery.log 2>&1 &
+	@python manage.py runserver 0.0.0.0:8051

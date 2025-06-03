@@ -66,7 +66,7 @@ class UserFormFunctions(APIView):
         return MainForm.query_manager.get_queryset().filter(uuidx=is_pk).serialize()
 
     @method_decorator(auth.token_required)
-    def put(self, request):
+    def patch(self, request):
         is_pk = request.GET.get("uuid", None)
         if not is_pk:
             raise Exception("uuid不能为空")

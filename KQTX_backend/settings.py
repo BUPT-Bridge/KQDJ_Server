@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-++dgo-^r7(4!pm26dv%w9vrwdx4z6a9es2_vo^3c18ov$ekfuh"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -56,7 +56,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     'corsheaders.middleware.CorsMiddleware',
 	'django.middleware.common.CommonMiddleware',
-    # "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -153,3 +153,5 @@ CELERY_TASK_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
     Queue('analysis', Exchange('analysis'), routing_key='analysis'),
 )
+
+CSRF_TRUSTED_ORIGINS = ['https://api.kuangqiaodongjie.cn']
