@@ -16,9 +16,7 @@ class EnvVars:
         if self._initialized:
             return
             
-        # 加载.env文件
-        env_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) / '.env'
-        load_dotenv(dotenv_path=env_path)
+        load_dotenv()
         
         # 加载您已有的环境变量
         self.API_KEY = os.getenv('API_KEY', '')

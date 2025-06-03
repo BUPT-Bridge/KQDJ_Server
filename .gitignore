@@ -13,3 +13,4 @@ create_view_stats.py
 /staticfiles/
 *.json
 user/utils/wxacode
+celery.log
