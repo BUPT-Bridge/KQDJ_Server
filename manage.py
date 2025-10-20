@@ -13,6 +13,13 @@ def load_env():
         # 加载环境变量
         from utils.env_loader import env_vars
         print("环境变量已加载")
+
+        # 创建上级目录下的database文件夹
+        parent_dir = os.path.dirname(project_path)  # 上级目录
+        db_dir = os.path.join(parent_dir, "database")
+        os.makedirs(db_dir, exist_ok=True)
+        print(f"数据库目录已创建: {db_dir}")
+        
     except Exception as e:
         print(f"加载环境变量时出错: {e}")
         raise

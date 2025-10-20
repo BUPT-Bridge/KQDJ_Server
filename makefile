@@ -35,7 +35,7 @@ clean:
 
 cleanall: clean
 	@echo "清理数据库..."
-	@rm -rf db.sqlite3
+	@rm -rf ../database/db.sqlite3
 	@echo "✅ 清理完成"
 
 setup:
