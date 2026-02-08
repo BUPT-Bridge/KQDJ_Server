@@ -25,6 +25,8 @@ class Users(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    finished_forms_count = models.IntegerField(default=0, verbose_name='已完成表单数量')
+    is_important = models.BooleanField(default=False, verbose_name='是否重要')
     
     def update_user(self, **kwargs):
         """
@@ -34,7 +36,7 @@ class Users(models.Model):
                 - username: str 用户名
                 - phone: str 手机号
                 - password: str 密码
-                - avatar: InMemoryUploadedFile 头像文件
+                - avatar: 文件路径
         :return: dict 更新结果
         """
         data = kwargs.get('data', {})

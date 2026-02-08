@@ -85,10 +85,18 @@ class StatusCountView(APIView):
         if not category_only:
             result.update({
                 'status': {
-                    'unhandled': status_num.Unhandle,
-                    'handling': status_num.Handling, 
-                    'handled': status_num.Handled,
-                    'waiting_callback': status_num.WaitCallback,
+                    'normal': {
+                        'unhandled': status_num.Unhandle,
+                        'handling': status_num.Handling, 
+                        'handled': status_num.Handled,
+                        'waiting_callback': status_num.WaitCallback,
+                    },
+                    'grid': {
+                        'unhandled': status_num.GridUnhandle,
+                        'handling': status_num.GridHandling,
+                        'handled': status_num.GridHandled,
+                        'waiting_callback': status_num.GridWaitCallback,
+                    }
                 }
             })
             
@@ -118,14 +126,21 @@ class TopUnhandledFormView(APIView):
         return CustomResponse(self._get_top_unhandled_forms, request)
     
     def _get_top_unhandled_forms(self, request):
-        """获取并返回前N个未处理表单"""
+        """获取并返回前N个未处理表单（仅包含重要用户提交的表单）"""
+        from user.models import Users
+        
         # 从查询参数获取要返回的表单数量，默认为12
         limit = int(request.query_params.get('limit', 12))
         if limit > 20:  # 限制最大数量，避免返回过多数据
             limit = 20
-            
-        # 获取未处理的表单
-        unhandled_forms = MainForm.query_manager.unhandled().order_by('-upload_time')[:limit]
+        
+        # 获取所有is_important=True的用户的openid列表
+        important_user_openids = Users.objects.filter(is_important=True).values_list('openid', flat=True)
+        
+        # 获取未处理的表单，且user_openid在重要用户列表中
+        unhandled_forms = MainForm.query_manager.unhandled().filter(
+            user_openid__in=important_user_openids
+        ).order_by('-upload_time')[:limit]
         
         result = []
         for form in unhandled_forms:

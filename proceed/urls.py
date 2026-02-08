@@ -14,4 +14,5 @@ urlpatterns = [
     path("admin_handle", views.AdminFormHandleFunctions.as_view(), name="admin_handle"),
     path("excel_get", views.List2Excel.as_view(), name="excel_get"),
     path('upload_image', views.ImageUploadAPI.as_view(), name='upload_image'),
+    path('dispatch_order', views.DispatchOrder.as_view(), name='dispatch_order'),
 ]

@@ -11,11 +11,19 @@ logger = logging.getLogger(__name__)
 
 class StatusTypeNum(models.Model):
     """状态数量模型"""
-    Unhandle = models.IntegerField(default=0, verbose_name='未处理数量')
-    Handling = models.IntegerField(default=0, verbose_name='处理中数量')
-    Handled = models.IntegerField(default=0, verbose_name='已处理数量')
-    WaitCallback = models.IntegerField(default=0, verbose_name='待回访数量')
+    # 普通用户（非网格员）的状态统计
+    Unhandle = models.IntegerField(default=0, verbose_name='普通用户-未处理数量')
+    Handling = models.IntegerField(default=0, verbose_name='普通用户-处理中数量')
+    Handled = models.IntegerField(default=0, verbose_name='普通用户-已处理数量')
+    WaitCallback = models.IntegerField(default=0, verbose_name='普通用户-待回访数量')
     
+    # 网格员的状态统计
+    GridUnhandle = models.IntegerField(default=0, verbose_name='网格员-未处理数量')
+    GridHandling = models.IntegerField(default=0, verbose_name='网格员-处理中数量')
+    GridHandled = models.IntegerField(default=0, verbose_name='网格员-已处理数量')
+    GridWaitCallback = models.IntegerField(default=0, verbose_name='网格员-待回访数量')
+    
+    # 分类统计
     PropertyDispute = models.IntegerField(default=0, verbose_name='物业纠纷类数量')
     PublicFacility = models.IntegerField(default=0, verbose_name='公共设施维护类数量')
     Environment = models.IntegerField(default=0, verbose_name='环境卫生与秩序类数量')
@@ -26,7 +34,7 @@ class StatusTypeNum(models.Model):
         verbose_name_plural = '状态数量'
 
     def __str__(self):
-        return f"未处理数量: {self.Unhandle}, 处理中数量: {self.Handling}, 已处理数量: {self.Handled}, 待回访数量: {self.WaitCallback}"
+        return f"普通用户-未处理: {self.Unhandle}, 处理中: {self.Handling}, 已处理: {self.Handled}, 待回访: {self.WaitCallback} | 网格员-未处理: {self.GridUnhandle}, 处理中: {self.GridHandling}, 已处理: {self.GridHandled}, 待回访: {self.GridWaitCallback}"
     
     # 类别与字段映射，定义为类变量方便重用
     CATEGORY_FIELD_MAP = {
@@ -100,53 +108,99 @@ class StatusTypeNum(models.Model):
     @classmethod
     def update_counts(cls, optimize=True, update_category=True):
         """
-        根据MainForm模型的数据更新状态数量和类别数量
+        根据Mai nForm模型的数据更新状态数量和类别数量
+        区分普通用户和网格员的表单
         
         Args:
             optimize: 是否使用优化方式（单次查询）更新状态
             update_category: 是否更新类别计数，如果只需更新状态计数可设为False
         """
+        from utils.constance import GRID_WORKER
+        
         # 获取或创建StatusTypeNum实例
         status_num, created = cls.objects.get_or_create(id=1)
         
         if optimize:
             # 使用单次查询获取所有状态计数
-            from django.db.models import Count, Q
+            from django.db.models import Count, Q, OuterRef, Subquery
             from proceed.utils.choice import UNHANDLED, PROCESSING, HANDLED, NEED_FEEDBACK
             
-            # 执行单次查询，使用条件表达式统计各个状态的数量
-            counts = MainForm.objects.aggregate(
+            # 创建子查询获取用户权限
+            user_permission_subquery = Users.objects.filter(
+                openid=OuterRef('user_openid')
+            ).values('permission_level')[:1]
+            
+            # 统计普通用户（非网格员）的表单
+            normal_counts = MainForm.objects.annotate(
+                user_permission=Subquery(user_permission_subquery)
+            ).exclude(
+                user_permission=GRID_WORKER
+            ).aggregate(
                 unhandle_count=Count('id', filter=Q(handle=UNHANDLED)),
                 handling_count=Count('id', filter=Q(handle=PROCESSING)),
                 handled_count=Count('id', filter=Q(handle=HANDLED)),
                 feedback_needed_count=Count('id', filter=Q(handle=PROCESSING, feedback_status=NEED_FEEDBACK))
             )
             
-            # 更新状态数量
-            status_num.Unhandle = counts['unhandle_count']
-            status_num.Handling = counts['handling_count']
-            status_num.Handled = counts['handled_count']
-            status_num.WaitCallback = counts['feedback_needed_count']
+            # 统计网格员的表单
+            grid_counts = MainForm.objects.annotate(
+                user_permission=Subquery(user_permission_subquery)
+            ).filter(
+                user_permission=GRID_WORKER
+            ).aggregate(
+                unhandle_count=Count('id', filter=Q(handle=UNHANDLED)),
+                handling_count=Count('id', filter=Q(handle=PROCESSING)),
+                handled_count=Count('id', filter=Q(handle=HANDLED)),
+                feedback_needed_count=Count('id', filter=Q(handle=PROCESSING, feedback_status=NEED_FEEDBACK))
+            )
+            
+            # 更新普通用户状态数量
+            status_num.Unhandle = normal_counts['unhandle_count'] or 0
+            status_num.Handling = normal_counts['handling_count'] or 0
+            status_num.Handled = normal_counts['handled_count'] or 0
+            status_num.WaitCallback = normal_counts['feedback_needed_count'] or 0
+            
+            # 更新网格员状态数量
+            status_num.GridUnhandle = grid_counts['unhandle_count'] or 0
+            status_num.GridHandling = grid_counts['handling_count'] or 0
+            status_num.GridHandled = grid_counts['handled_count'] or 0
+            status_num.GridWaitCallback = grid_counts['feedback_needed_count'] or 0
             
             # 如果需要更新类别计数，调用专用方法
             if update_category:
-                # 我们直接调用更新类别的方法，避免代码重复
-                # 但不保存，因为后面会统一保存
                 status_num = cls.update_category_counts(optimize=True, 
                                                        save_to_db=False, 
                                                        instance=status_num)
         else:
             # 原始方法，使用多次查询
-            unhandle_count = MainForm.query_manager.unhandled().count()
-            handled_count = MainForm.query_manager.handled().count()
-            feedback_needed_count = MainForm.query_manager.feedback_needed().count()
-            handling_count = MainForm.query_manager.handling().count()
+            # 获取所有用户的 openid 和权限级别
+            grid_worker_openids = set(Users.objects.filter(
+                permission_level=GRID_WORKER
+            ).values_list('openid', flat=True))
             
-            # 更新状态数量
-            status_num.Unhandle = unhandle_count
-            status_num.Handling = handling_count
-            status_num.Handled = handled_count
-            status_num.WaitCallback = feedback_needed_count
+            # 统计普通用户的表单
+            normal_unhandle = MainForm.query_manager.unhandled().exclude(user_openid__in=grid_worker_openids).count()
+            normal_handled = MainForm.query_manager.handled().exclude(user_openid__in=grid_worker_openids).count()
+            normal_feedback = MainForm.query_manager.feedback_needed().exclude(user_openid__in=grid_worker_openids).count()
+            normal_handling = MainForm.query_manager.handling().exclude(user_openid__in=grid_worker_openids).count()
+            
+            # 统计网格员的表单
+            grid_unhandle = MainForm.query_manager.unhandled().filter(user_openid__in=grid_worker_openids).count()
+            grid_handled = MainForm.query_manager.handled().filter(user_openid__in=grid_worker_openids).count()
+            grid_feedback = MainForm.query_manager.feedback_needed().filter(user_openid__in=grid_worker_openids).count()
+            grid_handling = MainForm.query_manager.handling().filter(user_openid__in=grid_worker_openids).count()
+            
+            # 更新普通用户状态数量
+            status_num.Unhandle = normal_unhandle
+            status_num.Handling = normal_handling
+            status_num.Handled = normal_handled
+            status_num.WaitCallback = normal_feedback
+            
+            # 更新网格员状态数量
+            status_num.GridUnhandle = grid_unhandle
+            status_num.GridHandling = grid_handling
+            status_num.GridHandled = grid_handled
+            status_num.GridWaitCallback = grid_feedback
             
             # 如果需要更新类别计数，调用专用方法
             if update_category:

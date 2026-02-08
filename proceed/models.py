@@ -107,6 +107,10 @@ class MainForm(models.Model):
         if sum(update_types) > 1:
             raise ValueError("每次只能提供一种类型的更新信息")
 
+        # 记录更新前的状态
+        old_handle_status = self.handle
+        trigger_count_update = False
+
         # 更新管理员信息
         handle_info = kwargs.get("handle_info", {})
         if handle_info:
@@ -117,6 +121,9 @@ class MainForm(models.Model):
             self.admin_openid = kwargs.get("openid", self.admin_openid)
             if self.feedback_status == NOT_NEED_FEEDBACK:
                 self.handle = HANDLED
+                # 检查状态是否变为已完成
+                if old_handle_status != HANDLED:
+                    trigger_count_update = True
             else:
                 self.handle = PROCESSING
 
@@ -132,6 +139,9 @@ class MainForm(models.Model):
         if feedback_info:
             self.feedback_status = NEED_FEEDBACK_DONE
             self.handle = HANDLED
+            # 检查状态是否变为已完成
+            if old_handle_status != HANDLED:
+                trigger_count_update = True
             self.feedback_summary = feedback_info.get(
                 "feedback_summary", self.feedback_summary
             )
@@ -144,6 +154,12 @@ class MainForm(models.Model):
             self.evaluation_or_not = True
 
         self.save()
+        
+        # 如果表单状态变为已完成，且有管理员 openid，则触发异步任务
+        if trigger_count_update and self.admin_openid:
+            from analysis.tasks import update_admin_finished_count_async
+            update_admin_finished_count_async.delay(self.admin_openid)
+        
         return True
 
     def export_to_excel(start_timestamp, end_timestamp):
@@ -306,3 +322,40 @@ class AllImageModel(models.Model):
     class Meta:
         verbose_name = "所有图片"
         verbose_name_plural = "所有图片"
+
+
+class Order(models.Model):
+    """
+    派单记录模型
+    """
+    from .manager import OrderManager
+    
+    objects = models.Manager()
+    query_manager = OrderManager()
+    
+    main_form = models.ForeignKey(
+        MainForm,
+        on_delete=models.CASCADE,
+        related_name="orders",
+        verbose_name="关联表单"
+    )
+    serial_number = models.CharField(max_length=20, verbose_name="表单序号")
+    title = models.CharField(max_length=100, verbose_name="表单标题")
+    dispatch_time = models.BigIntegerField(verbose_name="派单时间")
+    dispatch_openid = models.CharField(max_length=100, verbose_name="派单员OpenID")
+    
+    def save(self, *args, **kwargs):
+        if self.pk is None:  # 只在首次创建时执行
+            set_timestamp(self, field_name='dispatch_time')
+        super().save(*args, **kwargs)
+    
+    def get_datetime(self):
+        return datetime.fromtimestamp(self.dispatch_time)
+    
+    def __str__(self):
+        return f"派单 {self.serial_number} - {self.dispatch_openid}"
+    
+    class Meta:
+        verbose_name = "派单记录"
+        verbose_name_plural = "派单记录"
+        ordering = ['-dispatch_time']

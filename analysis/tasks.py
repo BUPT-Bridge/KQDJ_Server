@@ -69,6 +69,33 @@ def create_form_user_relation_async(form_pk):
         logger.error(f"创建表单用户关系失败: {str(e)}")
         return False
 
+
+@shared_task
+def update_admin_finished_count_async(admin_openid):
+    """
+    异步更新管理员的已完成表单数量
+    :param admin_openid: 管理员的 openid
+    """
+    from user.models import Users
+    from django.db.models import F
+    
+    try:
+        # 使用 F 表达式避免竞态条件，原子地增加计数
+        updated = Users.objects.filter(openid=admin_openid).update(
+            finished_forms_count=F('finished_forms_count') + 1
+        )
+        
+        if updated > 0:
+            logger.info(f"管理员 {admin_openid} 的完成表单数已更新")
+            return True
+        else:
+            logger.warning(f"未找到管理员 {admin_openid}")
+            return False
+    except Exception as e:
+        logger.error(f"更新管理员完成表单数失败: {str(e)}")
+        return False
+
+
 def update_view_counts_async():
     """
     在后台线程中异步更新访问量和注册量统计

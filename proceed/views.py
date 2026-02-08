@@ -5,6 +5,11 @@ from utils.response import CustomResponse, CustomResponseSync
 from .models import MainForm, AllImageModel
 import asyncio
 from utils.constance import *
+import requests
+from utils.env_loader import EnvVars
+from datetime import datetime
+from .utils.handle_timestamp import timestamp_to_beijing_str
+import pytz
 
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
@@ -258,3 +263,168 @@ class List2Excel(APIView):
 
         except Exception as e:
             raise Exception(str(e))
+
+
+class DispatchOrder(APIView):
+    """
+    派单接口
+    POST: 向指定用户发送工单订阅消息
+    GET: 获取当前用户的派单记录
+    """
+    @method_decorator(
+        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER, GRID_WORKER, PROPERTY_STAFF])
+    )
+    def get(self, request):
+        """获取派单记录"""
+        return CustomResponse(self._get_dispatch_orders, request)
+    
+    @method_decorator(
+        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
+    )
+    def post(self, request):
+        return CustomResponse(self._dispatch_order, request)
+    
+    def _get_dispatch_orders(self, request):
+        """获取当前用户的派单记录"""
+        openid = request.openid
+        from .models import Order
+        
+        # 查询该派单员的所有派单记录
+        orders_queryset = Order.query_manager.filter_by_openid(openid)
+        
+        if not orders_queryset.exists():
+            return {
+                "total": 0,
+                "results": [],
+                "message": "暂无派单记录"
+            }
+        
+        return orders_queryset.paginate(request)
+    
+    def _dispatch_order(self, request):
+        # 从查询参数获取openid和uuidx
+        openid = request.GET.get('openid')
+        uuidx = request.GET.get('uuidx')
+        
+        # 参数验证
+        if not openid:
+            raise Exception("openid参数不能为空")
+        if not uuidx:
+            raise Exception("uuidx参数不能为空")
+        
+        # 查询表单数据
+        try:
+            form = MainForm.objects.get(uuidx=uuidx)
+        except MainForm.DoesNotExist:
+            raise Exception("找不到对应的表单")
+        
+        # 提取需要的字段
+        serial_number = form.serial_number
+        category = form.category
+        upload_time = form.upload_time
+        title = form.title
+        
+        # 验证必要字段
+        if not serial_number:
+            raise Exception("表单序号为空，无法派单")
+        if not title:
+            raise Exception("表单标题为空，无法派单")
+        
+        # 获取access_token
+        access_token = self._get_access_token()
+        
+        # 发送订阅消息
+        result = self._send_subscribe_message(
+            access_token=access_token,
+            openid=openid,
+            serial_number=serial_number,
+            category=category,
+            upload_time=upload_time,
+            title=title
+        )
+        
+        # 派单成功后，创建派单记录
+        from .models import Order
+        Order.objects.create(
+            main_form=form,
+            serial_number=serial_number,
+            title=title,
+            dispatch_openid=openid
+        )
+        
+        return result
+    
+    def _get_access_token(self):
+        """获取微信access_token"""
+        env = EnvVars()
+        appid = env.APP_ID
+        secret = env.APP_SECRET
+        
+        url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}"
+        
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            if 'access_token' not in data:
+                error_msg = data.get('errmsg', '未知错误')
+                raise Exception(f"获取access_token失败: {error_msg}")
+            
+            return data['access_token']
+        except requests.RequestException as e:
+            raise Exception(f"请求微信接口失败: {str(e)}")
+    
+    def _send_subscribe_message(self, access_token, openid, serial_number, category, upload_time, title):
+        """发送订阅消息"""
+        url = f"https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}"
+        
+        # 获取当前时间（派单时间）
+        beijing_tz = pytz.timezone('Asia/Shanghai')
+        current_time = datetime.now(beijing_tz)
+        dispatch_time = current_time.strftime("%Y年%m月%d日 %H:%M")
+        
+        # 转换诉求时间
+        request_time = timestamp_to_beijing_str(upload_time, format="%Y年%m月%d日 %H:%M")
+        
+        # 构建请求体
+        message_data = {
+            "template_id": "FVrAJnJauxtOwiEpxOW47zKiSICGIFvaq8iXUaHtY-g",
+            "touser": openid,
+            "data": {
+                "thing1": {
+                    "value": serial_number[:20]  # 微信限制最多20个字符
+                },
+                "phrase2": {
+                    "value": category if category else "其他"
+                },
+                "time3": {
+                    "value": dispatch_time
+                },
+                "thing5": {
+                    "value": title[:20]  # 微信限制最多20个字符
+                },
+                "time8": {
+                    "value": request_time
+                }
+            },
+            "miniprogram_state": "formal",
+            "lang": "zh_CN"
+        }
+        
+        try:
+            response = requests.post(url, json=message_data, timeout=10)
+            response.raise_for_status()
+            result = response.json()
+            
+            if result.get('errcode') == 0:
+                return {
+                    "message": "派单成功",
+                    "serial_number": serial_number,
+                    "recipient": openid
+                }
+            else:
+                error_msg = result.get('errmsg', '未知错误')
+                raise Exception(f"发送订阅消息失败: {error_msg}")
+        except requests.RequestException as e:
+            raise Exception(f"请求微信接口失败: {str(e)}")

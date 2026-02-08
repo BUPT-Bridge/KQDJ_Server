@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Banners, Notice, Cover, PageView, PhoneNumber, TweetPage
+from .models import Banners, Notice, Cover, PageView, PhoneNumber, TweetPage, Video
 """
 本文件是用于创建序列化器的文件，在序列化器中，可以：
 1.定义序列化器类
@@ -25,4 +25,10 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
 class TweetSerializer(serializers.ModelSerializer):
     class Meta:
         model = TweetPage
+        fields = '__all__'
+
+
+class VideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Video
         fields = '__all__'

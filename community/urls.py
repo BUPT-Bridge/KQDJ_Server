@@ -16,4 +16,6 @@ urlpatterns = [
     path('banners', views.BanerFunctions.as_view(), name='banner'),
     path('cover', views.CoverFunctions.as_view(), name='cover'),
     path('tweet', views.TweetShowFunctions.as_view(), name='tweet'),
+    path('video/upload', views.VideoUploadFunctions.as_view(), name='video_upload'),
+    path('video/info', views.VideoInfoFunctions.as_view(), name='video_info'),
 ]

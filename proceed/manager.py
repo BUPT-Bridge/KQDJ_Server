@@ -106,6 +106,45 @@ class MainFormManager(models.Manager):
             ),
         }
 
+
+class OrderQuerySet(models.QuerySet):
+    def serialize(self):
+        """序列化当前查询集"""
+        from proceed.serializers import OrderSerializer
+        return OrderSerializer(self, many=True).data
+    
+    def paginate(self, request):
+        """QuerySet的分页方法"""
+        return OrderManager().paginate(request, self)
+
+
+class OrderManager(models.Manager):
+    def get_queryset(self):
+        return OrderQuerySet(self.model, using=self._db)
+    
+    def filter_by_openid(self, dispatch_openid):
+        """按派单员openid筛选"""
+        return self.get_queryset().filter(dispatch_openid=dispatch_openid)
+    
+    def paginate(self, request, queryset=None):
+        """分页方法"""
+        queryset = queryset or self
+        
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        
+        paginator = Paginator(queryset, page_size)
+        current_page = paginator.get_page(page)
+        
+        from .serializers import OrderSerializer
+        return {
+            'total': paginator.count,
+            'total_pages': paginator.num_pages,
+            'current_page': page,
+            'page_size': page_size,
+            'results': OrderSerializer(current_page.object_list, many=True).data
+        }
+
     async def create_form(self, form_data, images=None, source="user", user_openid=None):
         """异步创建表单方法"""
         content = form_data.get("content", "")

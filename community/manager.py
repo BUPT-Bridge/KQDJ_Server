@@ -188,3 +188,120 @@ class TweetPageManager(models.Manager):
         obj = self.get(pk=pk)
         obj.delete()
         return {"message": "推文删除成功"}
+
+
+class VideoManager(models.Manager):
+    """视频管理器"""
+
+    def get_videos(self, request=None):
+        """
+        获取视频列表
+        
+        Args:
+            request: HTTP请求对象，用于分页
+            
+        Returns:
+            dict: 包含视频列表的信息
+        """
+        from .serializers import VideoSerializer
+        videos = self.get_queryset().all()
+        
+        if not videos:
+            return {"data": [], "message": "暂无视频"}
+        
+        # 如果提供了request，进行分页
+        if request:
+            page = int(request.GET.get('page', 1))
+            page_size = int(request.GET.get('page_size', 10))
+            
+            paginator = Paginator(videos, page_size)
+            current_page = paginator.get_page(page)
+            
+            return {
+                'total': paginator.count,
+                'total_pages': paginator.num_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'results': VideoSerializer(current_page.object_list, many=True).data
+            }
+        
+        return {
+            'data': VideoSerializer(videos, many=True).data,
+            'message': "获取成功"
+        }
+
+    def create_video(self, video_file) -> dict:
+        """
+        创建视频记录（仅保存文件，返回路径）
+        
+        Args:
+            video_file: 上传的视频文件
+            
+        Returns:
+            dict: 包含视频路径和ID的信息
+        """
+        if not video_file:
+            raise ValueError("没有提供视频文件")
+        
+        # 创建视频记录
+        new_video = self.create(video_file=video_file)
+        from .serializers import VideoSerializer
+        
+        return {
+            "data": VideoSerializer(new_video).data,
+            "message": "视频上传成功"
+        }
+
+    def update_video_info(self, pk: int, title: str = None, description: str = None) -> dict:
+        """
+        更新视频的文字信息（标题和描述）
+        
+        Args:
+            pk: 视频记录的主键
+            title: 视频标题
+            description: 视频描述
+            
+        Returns:
+            dict: 包含更新结果的信息
+        """
+        try:
+            video = self.get(pk=pk)
+        except self.model.DoesNotExist:
+            raise ValueError(f"视频ID {pk} 不存在")
+        
+        if title is not None:
+            video.title = title
+        if description is not None:
+            video.description = description
+        
+        video.save()
+        
+        from .serializers import VideoSerializer
+        return {
+            "data": VideoSerializer(video).data,
+            "message": "视频信息更新成功"
+        }
+
+    def delete_video(self, pk: int) -> dict:
+        """
+        删除指定视频记录及其对应的视频文件
+        
+        Args:
+            pk: 视频记录的主键
+            
+        Returns:
+            dict: 包含删除结果的信息
+        """
+        try:
+            obj = self.get(pk=pk)
+        except self.model.DoesNotExist:
+            raise ValueError(f"视频ID {pk} 不存在")
+        
+        # 删除视频文件
+        if obj.video_file:
+            file_path = os.path.join(settings.MEDIA_ROOT, str(obj.video_file))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        
+        obj.delete()
+        return {"message": "视频删除成功"}

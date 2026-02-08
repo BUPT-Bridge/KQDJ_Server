@@ -49,13 +49,13 @@ class EnvVars:
         """获取Celery Broker URL"""
         if self.REDIS_PWD:
             return f'redis://:{self.REDIS_PWD}@1Panel-redis-MpoS:6379/0'
-        return 'redis://1Panel-redis-MpoS:6379/0'
+        return 'redis://localhost:6379/0'
     
     def get_celery_result_backend(self):
         """获取Celery Result Backend URL"""
         if self.REDIS_PWD:
             return f'redis://:{self.REDIS_PWD}@1Panel-redis-MpoS:6379/0'
-        return 'redis://1Panel-redis-MpoS:6379/0'
+        return 'redis://localhost:6379/0'
 
 # 创建单例实例
 env_vars = EnvVars()

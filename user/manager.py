@@ -21,6 +21,25 @@ class UserQuerySet(models.QuerySet):
     def paginate(self, request) -> dict:
         """QuerySet的分页方法"""
         return UsersManager().paginate(request, self)
+    
+    def paginate_data(self, page, page_size) -> dict:
+        """
+        QuerySet的分页方法(直接传入分页参数)
+        :param page: 页码
+        :param page_size: 每页数量
+        :return: dict 包含分页数据和元数据
+        """
+        from user.serializers import UserSerializer
+        paginator = Paginator(self, page_size)
+        current_page = paginator.get_page(page)
+        
+        return {
+            'total': paginator.count,
+            'total_pages': paginator.num_pages,
+            'current_page': page,
+            'page_size': page_size,
+            'results': UserSerializer(current_page.object_list, many=True).data
+        }
 
 
 class UsersManager(models.Manager):
@@ -49,6 +68,23 @@ class UsersManager(models.Manager):
         """获取不同权限的管理员"""
         return self.get_queryset().filter(permission_level=permission_level)
     
+    def get_admin_and_grid_list(self):
+        """获取管理员、网格员和物业人员列表，优先显示管理员，然后网格员，最后物业人员，同类内按创建时间倒序排序"""
+        from django.db.models import Q, Case, When, IntegerField
+        from utils.constance import ADMIN_USER, GRID_WORKER, PROPERTY_STAFF
+        
+        return self.get_queryset().filter(
+            Q(permission_level=ADMIN_USER) | Q(permission_level=GRID_WORKER) | Q(permission_level=PROPERTY_STAFF)
+        ).order_by(
+            Case(
+                When(permission_level=ADMIN_USER, then=0),
+                When(permission_level=GRID_WORKER, then=1),
+                When(permission_level=PROPERTY_STAFF, then=2),
+                output_field=IntegerField(),
+            ),
+            '-created_at'
+        )
+    
     def get_certain_password(self, phone):
         """获取某个用户的密码的表单"""
         result = self.get_queryset().filter(phone=phone).values_list('password', flat=True).first()
@@ -65,6 +101,10 @@ class UsersManager(models.Manager):
         end_of_day = timezone.make_aware(datetime.datetime.combine(today, datetime.time.max))
         # 使用带时区的datetime进行查询
         return self.get_queryset().filter(created_at__range=(start_of_day, end_of_day)).count()
+    
+    def get_important_users(self):
+        """获取所有重要用户（is_important=True）"""
+        return self.get_queryset().filter(is_important=True).order_by('-created_at')
 
     def paginate(self, request, queryset=None):
         """

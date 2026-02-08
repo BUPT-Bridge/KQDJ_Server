@@ -1,8 +1,8 @@
 from django.db import models
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-from .manager import BannerManager, CoverManager, PhoneNumberManager, TweetPageManager
-from .utils.rename import cover_upload_path, banner_upload_path
+from .manager import BannerManager, CoverManager, PhoneNumberManager, TweetPageManager, VideoManager
+from .utils.rename import cover_upload_path, banner_upload_path, video_upload_path
 from .utils.constance import *
 
 
@@ -112,3 +112,23 @@ class TweetPage(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Video(models.Model):
+    """视频模型"""
+    objects = models.Manager()
+    query_manager = VideoManager()
+
+    video_file = models.FileField(upload_to=video_upload_path, verbose_name='视频文件')
+    title = models.CharField(max_length=200, blank=True, null=True, verbose_name='视频标题')
+    description = models.TextField(blank=True, null=True, verbose_name='视频描述')
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='上传时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
+    class Meta:
+        verbose_name = '视频'
+        verbose_name_plural = '视频'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.title if self.title else f'Video {self.id}'

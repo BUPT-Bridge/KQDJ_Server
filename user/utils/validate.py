@@ -14,16 +14,17 @@ class VerificationCode:
         self.secret_key = secret_key
         self.expire_seconds = expire_seconds
 
-    def generate_code(self) -> str:
+    def generate_code(self, permission_type: str = 'admin') -> str:
         """
         生成验证码
-        :param data: 需要编码的数据
+        :param permission_type: 权限类型，admin 或 grid
         :return: 验证码字符串
         """
         # 添加时间戳
         timestamp = int(time.time())
         payload = {
             'timestamp': timestamp,
+            'type': permission_type,
         }
         
         # 将数据转为base64编码
