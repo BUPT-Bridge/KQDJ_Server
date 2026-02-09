@@ -20,16 +20,24 @@ class HandleImageSerializer(serializers.ModelSerializer):
 class MainFormSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)  # 通过related_name获取关联图片
     handle_images = HandleImageSerializer(many=True, read_only=True)  # 通过related_name获取处理反馈图片
+    is_dispatched = serializers.SerializerMethodField()
 
     class Meta:
         model = MainForm
         fields = '__all__'
 
+    def get_is_dispatched(self, obj):
+        return obj.orders.exists()
+
 class MainFormSerializerSimple(serializers.ModelSerializer):
+    is_dispatched = serializers.SerializerMethodField()
 
     class Meta:
         model = MainForm
-        fields = ['uuidx', 'type', 'title', 'upload_time', 'serial_number']
+        fields = ['uuidx', 'type', 'title', 'upload_time', 'serial_number', 'is_dispatched','handle']
+
+    def get_is_dispatched(self, obj):
+        return obj.orders.exists()
 
 
 class OrderSerializer(serializers.ModelSerializer):

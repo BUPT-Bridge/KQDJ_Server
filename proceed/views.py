@@ -3,6 +3,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from utils.response import CustomResponse, CustomResponseSync
 from .models import MainForm, AllImageModel
+from django.db import models
 import asyncio
 from utils.constance import *
 import requests
@@ -63,6 +64,13 @@ class UserFormFunctions(APIView):
         mainform_queryset = MainForm.query_manager.filter_by_openid(openid).filter(
             handle=finished
         )
+        is_dispatch = request.GET.get("is_dispatch")
+        if is_dispatch == "0":
+            mainform_queryset = mainform_queryset.filter(orders__isnull=True, handle=0)
+        elif is_dispatch == "1":
+            mainform_queryset = mainform_queryset.filter(
+                models.Q(orders__isnull=False) | ~models.Q(handle=0)
+            ).distinct()
         if not mainform_queryset.exists():
             raise Exception("对应表单不存在")
         return mainform_queryset.order_by("-upload_time").paginate(request, simple=True)
@@ -114,6 +122,11 @@ class AdminFormFunctions(APIView):
             form = MainForm.query_manager.get_queryset()
         else:
             form = MainForm.query_manager.get_queryset().filter(handle=finished)
+        is_dispatch = request.GET.get("is_dispatch")
+        if is_dispatch == "0":
+            form = form.filter(orders__isnull=True, handle=0)
+        elif is_dispatch == "1":
+            form = form.filter(models.Q(orders__isnull=False) | ~models.Q(handle=0)).distinct()
         if not form:
             raise Exception("表单不存在")
         return form.order_by("-upload_time").paginate(request, simple=True)
@@ -318,6 +331,14 @@ class DispatchOrder(APIView):
         except MainForm.DoesNotExist:
             raise Exception("找不到对应的表单")
         
+        # 已派单校验
+        if form.orders.exists():
+            raise Exception("该表单已派单，不能重复派单")
+
+        # 已处理校验
+        if form.handle != 0:
+            raise Exception("该表单已被处理，不能派单")
+
         # 提取需要的字段
         serial_number = form.serial_number
         category = form.category

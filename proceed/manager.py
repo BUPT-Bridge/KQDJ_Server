@@ -11,6 +11,7 @@ from .utils.analyze_content import analyze_content
 from .utils.generate_uuid import generate_custom_uuid
 from asgiref.sync import sync_to_async
 from django.db import transaction
+import json
 
 
 class MainFormQuerySet(models.QuerySet):
@@ -106,6 +107,73 @@ class MainFormManager(models.Manager):
             ),
         }
 
+    async def create_form(self, form_data, images=None, source="user", user_openid=None):
+        """异步创建表单方法"""
+        content = form_data.get("content", "")
+
+        # 使用 sync_to_async 包装同步数据库操作
+        @sync_to_async
+        def create_form_sync():
+            with transaction.atomic():
+                status = form_data.get("feedback_need", False)
+                form = self.create(
+                    phone=form_data.get("phone"),
+                    name=form_data.get("name"),
+                    address=form_data.get("address"),
+                    content=content,
+                    feedback_need=form_data.get("feedback_need", False),
+                    audio=form_data.get("audio", None),
+                    Latitude_Longitude=form_data.get("Latitude_Longitude", None),
+                    user_openid=user_openid,
+                    feedback_status=0 if status is False else 1,
+                )
+
+                normalized_images = images
+                if isinstance(images, str):
+                    try:
+                        parsed = json.loads(images)
+                        normalized_images = parsed if isinstance(parsed, list) else [images]
+                    except json.JSONDecodeError:
+                        normalized_images = [images]
+
+                if normalized_images:
+                    from .models import ImageModel
+
+                    for image in normalized_images:
+                        ImageModel.objects.create(
+                            main_form=form,
+                            image=image,
+                            source=source,
+                        )
+                return form
+
+        # 创建表单
+        form = await create_form_sync()
+
+        # 触发后台任务处理AI分析，不等待结果
+        from analysis.tasks import analyze_form_content_async
+
+        analyze_form_content_async.delay(form.id)
+
+        # 返回序列化数据
+        from .serializers import MainFormSerializerSimple
+
+        serializer_function = sync_to_async(lambda: MainFormSerializerSimple(form).data)
+        return await serializer_function()
+
+    def update_form_type_and_title(self, form_id, form_type, title, category):
+        """更新表单类型和标题的方法"""
+        from .models import MainForm
+
+        form = MainForm.objects.get(pk=form_id)
+        serial_number = generate_custom_uuid(form.serial_number, form_type)
+        form.type = form_type
+        form.title = title
+        form.category = category
+        form.serial_number = serial_number
+        form.save()
+        return form
+
 
 class OrderQuerySet(models.QuerySet):
     def serialize(self):
@@ -144,59 +212,3 @@ class OrderManager(models.Manager):
             'page_size': page_size,
             'results': OrderSerializer(current_page.object_list, many=True).data
         }
-
-    async def create_form(self, form_data, images=None, source="user", user_openid=None):
-        """异步创建表单方法"""
-        content = form_data.get("content", "")
-        
-        # 使用 sync_to_async 包装同步数据库操作
-        @sync_to_async
-        def create_form_sync():
-            with transaction.atomic():
-                status=form_data.get("feedback_need", False)
-                print("status",status)
-                form = self.create(
-                    phone=form_data.get("phone"),
-                    name=form_data.get("name"),
-                    address=form_data.get("address"),
-                    content=content,
-                    feedback_need=form_data.get("feedback_need", False),
-                    audio=form_data.get("audio", None),
-                    Latitude_Longitude = form_data.get("Latitude_Longitude", None),
-                    user_openid=user_openid,
-                    feedback_status= 0 if status==False else 1
-                )
-
-                if images:
-                    from .models import ImageModel
-                    for image in images:
-                        ImageModel.objects.create(
-                            main_form=form,
-                            image=image,
-                            source=source
-                        )
-                return form
-
-        # 创建表单
-        form = await create_form_sync()
-        
-        # 触发后台任务处理AI分析，不等待结果
-        from analysis.tasks import analyze_form_content_async
-        analyze_form_content_async.delay(form.id)
-        
-        # 返回序列化数据
-        from .serializers import MainFormSerializerSimple
-        serializer_function = sync_to_async(lambda: MainFormSerializerSimple(form).data)
-        return await serializer_function()
-
-    def update_form_type_and_title(self, form_id, form_type, title, category):
-        """更新表单类型和标题的方法"""
-        from .models import MainForm
-        form = MainForm.objects.get(pk=form_id)
-        serial_number = generate_custom_uuid(form.serial_number,form_type)
-        form.type = form_type
-        form.title = title
-        form.category = category  
-        form.serial_number = serial_number
-        form.save()
-        return form
