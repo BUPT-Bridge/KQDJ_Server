@@ -159,7 +159,7 @@ class ChangePermission(APIView):
         permission_type = request.GET.get('type', 'admin')
         return CustomResponse(self._generate_code, permission_type)
 
-    @method_decorator(auth.token_required(required_permission=[COMMON_USER]))
+    @method_decorator(auth.token_required(required_permission=[COMMON_USER, GRID_WORKER, PROPERTY_STAFF]))
     def post(self, request):
         code = request.data["code"]
         openid = request.openid

@@ -33,7 +33,7 @@ class Auth:
             cls._instance = super().__new__(cls)
             # 初始化配置
             cls._instance.jwt_secret = getattr(settings, 'SECRET_KEY', 'your-secret-key')
-            cls._instance.jwt_expiration = timedelta(days=14)
+            cls._instance.jwt_expiration = timedelta(days=30)
         return cls._instance
 
     def get_user_permission(self, openid):

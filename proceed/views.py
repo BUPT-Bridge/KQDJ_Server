@@ -1,16 +1,19 @@
-from utils.auth import auth
+import asyncio
+from datetime import datetime
+
+import pytz
+import requests
+from django.db import models
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
-from utils.response import CustomResponse, CustomResponseSync
-from .models import MainForm, AllImageModel
-from django.db import models
-import asyncio
+
+from utils.auth import auth
 from utils.constance import *
-import requests
 from utils.env_loader import EnvVars
-from datetime import datetime
+from utils.response import CustomResponse, CustomResponseSync
+
+from .models import AllImageModel, MainForm
 from .utils.handle_timestamp import timestamp_to_beijing_str
-import pytz
 
 
 # 在创建Response时，要求必须包含一个message字段，用于返回操作结果
@@ -18,7 +21,6 @@ import pytz
 # 其他字段可以根据需要自行添加
 # 建议所有接口数据通过Body返回
 class UserFormFunctions(APIView):
-
     @method_decorator(auth.token_required)
     def post(self, request):
         # 使用同步方式调用异步方法
@@ -26,7 +28,7 @@ class UserFormFunctions(APIView):
             permission_level = request.permission_level
             user_openid = request.openid
             form_data = request.data
-            form_images = request.data.get("form_images",[])
+            form_images = request.data.get("form_images", [])
             print(form_images)
             source = "user" if permission_level == 0 else "admin"
 
@@ -89,8 +91,11 @@ class UserFormFunctions(APIView):
         evaluate_info = request.data
         print(evaluate_info)
         form_evaulation = MainForm.objects.filter(uuidx=is_pk).first()
-        form_evaulation.update_form(evaluation_info=evaluate_info)  # 更新表单状态为已评价
+        form_evaulation.update_form(
+            evaluation_info=evaluate_info
+        )  # 更新表单状态为已评价
         from .serializers import MainFormSerializer
+
         return {"message": "评价成功", "data": MainFormSerializer(form_evaulation).data}
 
 
@@ -126,7 +131,9 @@ class AdminFormFunctions(APIView):
         if is_dispatch == "0":
             form = form.filter(orders__isnull=True, handle=0)
         elif is_dispatch == "1":
-            form = form.filter(models.Q(orders__isnull=False) | ~models.Q(handle=0)).distinct()
+            form = form.filter(
+                models.Q(orders__isnull=False) | ~models.Q(handle=0)
+            ).distinct()
         if not form:
             raise Exception("表单不存在")
         return form.order_by("-upload_time").paginate(request, simple=True)
@@ -144,7 +151,7 @@ class AdminFormFunctions(APIView):
 
     def _handle_a_form(self, request, is_pk):
         update_info = request.data
-        form_images = request.data.get("handle_images",[])
+        form_images = request.data.get("handle_images", [])
         form = MainForm.objects.filter(uuidx=is_pk).first()
 
         if not form:
@@ -228,36 +235,40 @@ class AdminFormHandleFunctions(APIView):
 
         return {"message": "表单处理成功", "data": MainFormSerializer(form).data}
 
+
 class ImageUploadAPI(APIView):
     """
     图片上传接口
     POST: 上传图片并返回保存路径
     """
+
     @method_decorator(auth.token_required)
     def post(self, request):
         return CustomResponse(self._upload_image, request)
-        
+
     def _upload_image(self, request):
         openid = request.openid
         # 检查是否有文件上传
-        if not request.FILES or 'file' not in request.FILES:
+        if not request.FILES or "file" not in request.FILES:
             raise Exception("没有找到上传的图片")
-            
-        image_file = request.FILES['file']
+
+        image_file = request.FILES["file"]
         from user.models import Users
+
         user_permission = Users.query_manager.get_permission_level(openid)
         source = "admin" if user_permission > 0 else "user"
         # 创建并保存图片
-        image_model = AllImageModel(image=image_file,source=source)
+        image_model = AllImageModel(image=image_file, source=source)
         image_model.save()
-        
+
         # 获取保存的路径
-        image_path = image_model.image.url if hasattr(image_model.image, 'url') else str(image_model.image)
-        
-        return {
-            "path": image_path,
-            "message": "图片上传成功"
-        }
+        image_path = (
+            image_model.image.url
+            if hasattr(image_model.image, "url")
+            else str(image_model.image)
+        )
+
+        return {"path": image_path, "message": "图片上传成功"}
 
 
 class List2Excel(APIView):
@@ -284,53 +295,57 @@ class DispatchOrder(APIView):
     POST: 向指定用户发送工单订阅消息
     GET: 获取当前用户的派单记录
     """
+
     @method_decorator(
-        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER, GRID_WORKER, PROPERTY_STAFF])
+        auth.token_required(
+            required_permission=[
+                ADMIN_USER,
+                SUPER_ADMIN_USER,
+                GRID_WORKER,
+                PROPERTY_STAFF,
+            ]
+        )
     )
     def get(self, request):
         """获取派单记录"""
         return CustomResponse(self._get_dispatch_orders, request)
-    
+
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def post(self, request):
         return CustomResponse(self._dispatch_order, request)
-    
+
     def _get_dispatch_orders(self, request):
         """获取当前用户的派单记录"""
         openid = request.openid
         from .models import Order
-        
+
         # 查询该派单员的所有派单记录
         orders_queryset = Order.query_manager.filter_by_openid(openid)
-        
+
         if not orders_queryset.exists():
-            return {
-                "total": 0,
-                "results": [],
-                "message": "暂无派单记录"
-            }
-        
+            return {"total": 0, "results": [], "message": "暂无派单记录"}
+
         return orders_queryset.paginate(request)
-    
+
     def _dispatch_order(self, request):
         # 从查询参数获取openid和uuidx
-        openid = request.GET.get('openid')
-        uuidx = request.GET.get('uuidx')
-        
+        openid = request.GET.get("openid")
+        uuidx = request.GET.get("uuidx")
+
         # 参数验证
         if not openid:
             raise Exception("openid参数不能为空")
         if not uuidx:
             raise Exception("uuidx参数不能为空")
-        
+
         # 查询表单数据
         try:
             form = MainForm.objects.get(uuidx=uuidx)
         except MainForm.DoesNotExist:
             raise Exception("找不到对应的表单")
-        
+
         # 已派单校验
         if form.orders.exists():
             raise Exception("该表单已派单，不能重复派单")
@@ -344,16 +359,16 @@ class DispatchOrder(APIView):
         category = form.category
         upload_time = form.upload_time
         title = form.title
-        
+
         # 验证必要字段
         if not serial_number:
             raise Exception("表单序号为空，无法派单")
         if not title:
             raise Exception("表单标题为空，无法派单")
-        
+
         # 获取access_token
         access_token = self._get_access_token()
-        
+
         # 发送订阅消息
         result = self._send_subscribe_message(
             access_token=access_token,
@@ -361,53 +376,68 @@ class DispatchOrder(APIView):
             serial_number=serial_number,
             category=category,
             upload_time=upload_time,
-            title=title
+            title=title,
         )
-        
+
         # 派单成功后，创建派单记录
         from .models import Order
+
         Order.objects.create(
             main_form=form,
             serial_number=serial_number,
             title=title,
-            dispatch_openid=openid
+            dispatch_openid=openid,
         )
-        
+
         return result
-    
+
     def _get_access_token(self):
         """获取微信access_token"""
         env = EnvVars()
         appid = env.APP_ID
         secret = env.APP_SECRET
-        
+
         url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}"
-        
+
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
-            if 'access_token' not in data:
-                error_msg = data.get('errmsg', '未知错误')
+
+            if "access_token" not in data:
+                error_msg = data.get("errmsg", "未知错误")
                 raise Exception(f"获取access_token失败: {error_msg}")
-            
-            return data['access_token']
+
+            return data["access_token"]
         except requests.RequestException as e:
             raise Exception(f"请求微信接口失败: {str(e)}")
-    
-    def _send_subscribe_message(self, access_token, openid, serial_number, category, upload_time, title):
+
+    def _send_subscribe_message(
+        self, access_token, openid, serial_number, category, upload_time, title
+    ):
         """发送订阅消息"""
         url = f"https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}"
-        
+
         # 获取当前时间（派单时间）
-        beijing_tz = pytz.timezone('Asia/Shanghai')
+        beijing_tz = pytz.timezone("Asia/Shanghai")
         current_time = datetime.now(beijing_tz)
         dispatch_time = current_time.strftime("%Y年%m月%d日 %H:%M")
-        
+
         # 转换诉求时间
-        request_time = timestamp_to_beijing_str(upload_time, format="%Y年%m月%d日 %H:%M")
-        
+        request_time = timestamp_to_beijing_str(
+            upload_time, format="%Y年%m月%d日 %H:%M"
+        )
+
+        # 映射 category 值为符合微信订阅消息要求的短语
+        # 微信 phrase 类型字段要求使用预定义词库中的词
+        category_mapping = {
+            "物业纠纷类": "物业纠纷",
+            "公共设施维护类": "公共设施",
+            "环境卫生与秩序类": "环境卫生",
+            "邻里矛盾类": "邻里矛盾",
+        }
+        phrase_value = category_mapping.get(category, "其他") if category else "其他"
+
         # 构建请求体
         message_data = {
             "template_id": "FVrAJnJauxtOwiEpxOW47zKiSICGIFvaq8iXUaHtY-g",
@@ -416,36 +446,30 @@ class DispatchOrder(APIView):
                 "thing1": {
                     "value": serial_number[:20]  # 微信限制最多20个字符
                 },
-                "phrase2": {
-                    "value": category if category else "其他"
-                },
-                "time3": {
-                    "value": dispatch_time
-                },
+                "phrase2": {"value": phrase_value},
+                "time3": {"value": dispatch_time},
                 "thing5": {
                     "value": title[:20]  # 微信限制最多20个字符
                 },
-                "time8": {
-                    "value": request_time
-                }
+                "time8": {"value": request_time},
             },
             "miniprogram_state": "formal",
-            "lang": "zh_CN"
+            "lang": "zh_CN",
         }
-        
+
         try:
             response = requests.post(url, json=message_data, timeout=10)
             response.raise_for_status()
             result = response.json()
-            
-            if result.get('errcode') == 0:
+
+            if result.get("errcode") == 0:
                 return {
                     "message": "派单成功",
                     "serial_number": serial_number,
-                    "recipient": openid
+                    "recipient": openid,
                 }
             else:
-                error_msg = result.get('errmsg', '未知错误')
+                error_msg = result.get("errmsg", "未知错误")
                 raise Exception(f"发送订阅消息失败: {error_msg}")
         except requests.RequestException as e:
             raise Exception(f"请求微信接口失败: {str(e)}")

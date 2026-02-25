@@ -8,6 +8,7 @@
 3. 安装了make工具方便快速调试 (`sudo apt-get install make`)
 4. 安装`Reqable`作为调试工具 (可选) ([官网链接](https://reqable.com/))
 5. 阅读了`.env.example`，创建了属于自己的`.env`文件并设置好了环境变量(不要写任何注释)
+6. for me : source ../Django/bin/activate
 
 ### `make`命令详解
 1. 安装相应依赖并设置环境变量
