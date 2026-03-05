@@ -7,45 +7,47 @@
 """
 
 import os
-from django.db import models
+
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db import models
+
 
 class BannerManager(models.Manager):
-
     def get_banners(self):
         """使用 BannerSerializer 序列化查询集"""
         from .serializers import BannerSerializer
+
         banners = self.get_queryset().all()
         if not banners:
             return []
-        return {'data':BannerSerializer(banners, many=True).data,
-                'message':"获取成功"}
+        return {
+            "data": BannerSerializer(banners, many=True).data,
+            "message": "获取成功",
+        }
 
     def create_banner(self, request) -> dict:
         """
         创建新的Banner
-        
+
         Args:
             request: HTTP请求对象，包含上传的Banner图片
-            
+
         Returns:
             dict: 包含创建结果的信息
         """
-        banner_image = request.FILES.get('banner')
+        banner_image = request.FILES.get("banner")
         if not banner_image:
             raise ValueError("没有提供Banner图片")
-        
+
         # 检查数量限制
         if self.count() >= 8:
             raise ValueError("Banner图片数量已达到上限（8张）")
-            
+
         new_banner = self.create(banner_image=banner_image)
         from .serializers import BannerSerializer
-        return {
-            "data": BannerSerializer(new_banner).data,
-            "message": "Banner添加成功"
-        }
+
+        return {"data": BannerSerializer(new_banner).data, "message": "Banner添加成功"}
 
     def delete_banner(self, pk: int) -> dict:
         """
@@ -68,7 +70,6 @@ class BannerManager(models.Manager):
 
 
 class CoverManager(models.Manager):
-
     def get_cover(self):
         """获取并序列化第一个封面"""
         from .serializers import CoverSerializer
@@ -80,7 +81,6 @@ class CoverManager(models.Manager):
 
 
 class PhoneNumberManager(models.Manager):
-
     def get_phone_number(self):
         """获取并序列化第一个电话号码"""
         first_phone_number = self.get_queryset().all()
@@ -88,7 +88,7 @@ class PhoneNumberManager(models.Manager):
 
         if first_phone_number:
             return PhoneNumberSerializer(first_phone_number, many=True).data
-        else: 
+        else:
             return []
 
     def update_phone_number(
@@ -105,12 +105,10 @@ class PhoneNumberManager(models.Manager):
             dict: 包含更新结果的信息
         """
         from .serializers import PhoneNumberSerializer
+
         if pk:
             # 更新已存在记录
-            self.filter(pk=pk).update(
-                phone_name=phone_name,
-                phone_number=phone_number
-            )
+            self.filter(pk=pk).update(phone_name=phone_name, phone_number=phone_number)
             obj = self.get(pk=pk)
             message = "手机号更新成功"
         else:
@@ -134,12 +132,14 @@ class PhoneNumberManager(models.Manager):
         obj.delete()
         return {"message": "手机号删除成功"}
 
+
 class TweetQuerySet(models.QuerySet):
     def serialize(self) -> dict:
         """
         序列化当前查询集
         """
         from .serializers import TweetSerializer
+
         return TweetSerializer(self, many=True).data
 
     def paginate(self, request) -> dict:
@@ -149,7 +149,7 @@ class TweetQuerySet(models.QuerySet):
 
 class TweetPageManager(models.Manager):
     def get_queryset(self):
-        return TweetQuerySet(self.model, using=self._db).order_by('-id')
+        return TweetQuerySet(self.model, using=self._db).order_by("-id")
 
     def paginate(self, request, queryset=None):
         """
@@ -159,30 +159,31 @@ class TweetPageManager(models.Manager):
         :return: dict 包含分页数据和元数据
         """
         queryset = queryset or self.get_queryset()
-        
-        page = int(request.GET.get('page', 1))
-        page_size = int(request.GET.get('page_size', 10))
+
+        page = int(request.GET.get("page", 1))
+        page_size = int(request.GET.get("page_size", 10))
 
         paginator = Paginator(queryset, page_size)
         current_page = paginator.get_page(page)
 
         from .serializers import TweetSerializer
+
         return {
-            'total': paginator.count,
-            'total_pages': paginator.num_pages,
-            'current_page': page,
-            'page_size': page_size,
-            'results': TweetSerializer(current_page.object_list, many=True).data
+            "total": paginator.count,
+            "total_pages": paginator.num_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "results": TweetSerializer(current_page.object_list, many=True).data,
         }
 
     def get_tweet_list(self, request):
         """获取推文列表"""
-        tweets = self.get_queryset().all().order_by('-id')
+        tweets = self.get_queryset().all().order_by("-id")
         if not tweets:
             return []
         else:
             return self.paginate(request, tweets)
-    
+
     def delete_tweet(self, pk: int) -> dict:
         """删除指定推文"""
         obj = self.get(pk=pk)
@@ -196,71 +197,138 @@ class VideoManager(models.Manager):
     def get_videos(self, request=None):
         """
         获取视频列表
-        
+
         Args:
             request: HTTP请求对象，用于分页
-            
+
         Returns:
             dict: 包含视频列表的信息
         """
         from .serializers import VideoSerializer
+
         videos = self.get_queryset().all()
-        
+
         if not videos:
             return {"data": [], "message": "暂无视频"}
-        
+
         # 如果提供了request，进行分页
         if request:
-            page = int(request.GET.get('page', 1))
-            page_size = int(request.GET.get('page_size', 10))
-            
+            page = int(request.GET.get("page", 1))
+            page_size = int(request.GET.get("page_size", 10))
+
             paginator = Paginator(videos, page_size)
             current_page = paginator.get_page(page)
-            
-            return {
-                'total': paginator.count,
-                'total_pages': paginator.num_pages,
-                'current_page': page,
-                'page_size': page_size,
-                'results': VideoSerializer(current_page.object_list, many=True).data
-            }
-        
-        return {
-            'data': VideoSerializer(videos, many=True).data,
-            'message': "获取成功"
-        }
 
-    def create_video(self, video_file) -> dict:
+            return {
+                "total": paginator.count,
+                "total_pages": paginator.num_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "results": VideoSerializer(current_page.object_list, many=True).data,
+            }
+
+        return {"data": VideoSerializer(videos, many=True).data, "message": "获取成功"}
+
+    def save_video_file(self, video_file) -> dict:
         """
-        创建视频记录（仅保存文件，返回路径）
-        
+        仅保存视频文件，不创建数据库记录
+
         Args:
             video_file: 上传的视频文件
-            
+
+        Returns:
+            dict: 包含视频文件路径的信息
+        """
+        if not video_file:
+            raise ValueError("没有提供视频文件")
+
+        import time
+
+        from django.core.files.storage import default_storage
+
+        from .utils.rename import generate_random_string
+
+        # 生成文件名
+        ext = video_file.name.split(".")[-1]
+        new_filename = f"{generate_random_string()}_{int(time.time())}.{ext}"
+
+        # 保存文件到 media/video/ 目录
+        file_path = default_storage.save(f"video/{new_filename}", video_file)
+
+        # 返回相对路径
+        return {"data": {"file_path": file_path}, "message": "视频文件保存成功"}
+
+    def create_video(self, video_file, title=None, description=None) -> dict:
+        """
+        创建视频记录并保存文件
+
+        Args:
+            video_file: 上传的视频文件
+            title: 视频标题（可选）
+            description: 视频描述（可选）
+
         Returns:
             dict: 包含视频路径和ID的信息
         """
         if not video_file:
             raise ValueError("没有提供视频文件")
-        
-        # 创建视频记录
-        new_video = self.create(video_file=video_file)
-        from .serializers import VideoSerializer
-        
-        return {
-            "data": VideoSerializer(new_video).data,
-            "message": "视频上传成功"
-        }
 
-    def update_video_info(self, pk: int, title: str = None, description: str = None) -> dict:
+        # 创建视频记录
+        new_video = self.create(
+            video_file=video_file, title=title, description=description
+        )
+        from .serializers import VideoSerializer
+
+        return {"data": VideoSerializer(new_video).data, "message": "视频上传成功"}
+
+    def create_video_info(
+        self, file_path: str, title: str, description: str = None
+    ) -> dict:
+        """
+        使用已保存的文件路径创建视频信息记录
+
+        Args:
+            file_path: 视频文件的相对路径
+            title: 视频标题
+            description: 视频描述（可选）
+
+        Returns:
+            dict: 包含创建结果的信息
+        """
+        if not file_path:
+            raise ValueError("没有提供视频文件路径")
+        if not title:
+            raise ValueError("没有提供视频标题")
+
+        from django.core.files import File
+
+        # 获取完整文件路径
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        if not os.path.exists(full_path):
+            raise ValueError(f"文件不存在: {file_path}")
+
+        # 使用File对象包装已存在的文件
+        with open(full_path, "rb") as f:
+            video_file_obj = File(f, name=os.path.basename(file_path))
+            new_video = self.create(
+                video_file=video_file_obj, title=title, description=description
+            )
+
+        from .serializers import VideoSerializer
+
+        return {"data": VideoSerializer(new_video).data, "message": "视频信息创建成功"}
+
+    def update_video_info(
+        self, pk: int = None, title: str = None, description: str = None
+    ) -> dict:
         """
         更新视频的文字信息（标题和描述）
-        
+
         Args:
             pk: 视频记录的主键
             title: 视频标题
             description: 视频描述
-            
+
         Returns:
             dict: 包含更新结果的信息
         """
@@ -268,27 +336,25 @@ class VideoManager(models.Manager):
             video = self.get(pk=pk)
         except self.model.DoesNotExist:
             raise ValueError(f"视频ID {pk} 不存在")
-        
+
         if title is not None:
             video.title = title
         if description is not None:
             video.description = description
-        
+
         video.save()
-        
+
         from .serializers import VideoSerializer
-        return {
-            "data": VideoSerializer(video).data,
-            "message": "视频信息更新成功"
-        }
+
+        return {"data": VideoSerializer(video).data, "message": "视频信息更新成功"}
 
     def delete_video(self, pk: int) -> dict:
         """
         删除指定视频记录及其对应的视频文件
-        
+
         Args:
             pk: 视频记录的主键
-            
+
         Returns:
             dict: 包含删除结果的信息
         """
@@ -296,12 +362,12 @@ class VideoManager(models.Manager):
             obj = self.get(pk=pk)
         except self.model.DoesNotExist:
             raise ValueError(f"视频ID {pk} 不存在")
-        
+
         # 删除视频文件
         if obj.video_file:
             file_path = os.path.join(settings.MEDIA_ROOT, str(obj.video_file))
             if os.path.exists(file_path):
                 os.remove(file_path)
-        
+
         obj.delete()
         return {"message": "视频删除成功"}
