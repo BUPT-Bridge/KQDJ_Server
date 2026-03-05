@@ -1,9 +1,11 @@
-from rest_framework.views import APIView
-from utils.response import CustomResponse
 from django.utils.decorators import method_decorator
+from rest_framework.views import APIView
+
 from utils.auth import auth
 from utils.constance import *
-from .models import Banners, Notice, Cover, PageView, PhoneNumber, TweetPage, Video
+from utils.response import CustomResponse
+
+from .models import Banners, Cover, Notice, PageView, PhoneNumber, TweetPage, Video
 from .utils.limit import xianxing
 from .utils.wx_prase import get_wx_article_content
 
@@ -103,15 +105,18 @@ class CarLimitFunctions(APIView):
 class TweetShowFunctions(APIView):
     def get(self, request):
         # 获取请求数据
-        return CustomResponse(self._get_tweet,request)
+        return CustomResponse(self._get_tweet, request)
 
     def _get_tweet(self, request):
         return TweetPage.query_manager.get_tweet_list(request)
 
-    @method_decorator(auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER]))
+    @method_decorator(
+        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
+    )
     def post(self, request):
         # 获取请求数据
         return CustomResponse(self._add_tweet, request)
+
     def _add_tweet(self, request):
         url = request.data["url"]
         title, content = get_wx_article_content(url)
@@ -213,74 +218,92 @@ class VisitCountFunctions(APIView):
 # 视频上传接口
 class VideoUploadFunctions(APIView):
     """视频文件上传接口"""
-    
+
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def post(self, request):
         """上传视频文件"""
         return CustomResponse(self._upload_video, request)
-    
+
     def _upload_video(self, request) -> dict:
         """
         处理视频上传
-        从form-data中获取video字段，保存到服务器并返回路径
+        从form-data中获取video字段，保存到服务器并返回路径（不创建数据库记录）
         """
-        video_file = request.FILES.get('video')
+        video_file = request.FILES.get("video")
         if not video_file:
             raise ValueError("没有提供视频文件")
-        
-        return Video.query_manager.create_video(video_file)
+
+        return Video.query_manager.save_video_file(video_file)
 
 
 # 视频信息管理接口
 class VideoInfoFunctions(APIView):
     """视频信息管理接口"""
-    
+
     def get(self, request):
         """获取视频列表"""
         return CustomResponse(self._get_videos, request)
-    
+
+    @method_decorator(
+        auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
+    )
+    def post(self, request):
+        """使用已上传的文件路径创建视频记录"""
+        return CustomResponse(self._create_video_record, request)
+
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def put(self, request):
         """更新视频的标题和描述信息"""
         return CustomResponse(self._update_video_info, request)
-    
+
     @method_decorator(
         auth.token_required(required_permission=[ADMIN_USER, SUPER_ADMIN_USER])
     )
     def delete(self, request):
         """删除视频"""
         return CustomResponse(self._delete_video, request)
-    
+
     def _get_videos(self, request) -> dict:
         """获取视频列表"""
         return Video.query_manager.get_videos(request)
-    
+
+    def _create_video_record(self, request) -> dict:
+        """
+        使用已上传的文件路径创建视频记录
+        需要提供：file_path(视频文件路径), title(标题), description(描述，可选)
+        """
+        file_path = request.data.get("file_path")
+        title = request.data.get("title")
+        description = request.data.get("description")
+
+        return Video.query_manager.create_video_info(
+            file_path=file_path, title=title, description=description
+        )
+
     def _update_video_info(self, request) -> dict:
         """
         更新视频的文字信息
         需要提供：pk(视频ID), title(标题), description(描述)
         """
-        pk = request.GET.get('pk')
+        pk = request.GET.get("pk")
         if not pk:
             raise ValueError("缺少视频ID参数")
-        
-        title = request.data.get('title')
-        description = request.data.get('description')
-        
+
+        title = request.data.get("title")
+        description = request.data.get("description")
+
         return Video.query_manager.update_video_info(
-            pk=pk,
-            title=title,
-            description=description
+            pk=pk, title=title, description=description
         )
-    
+
     def _delete_video(self, request) -> dict:
         """删除视频"""
-        pk = request.GET.get('pk')
+        pk = request.GET.get("pk")
         if not pk:
             raise ValueError("缺少视频ID参数")
-        
+
         return Video.query_manager.delete_video(pk)
