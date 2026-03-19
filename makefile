@@ -12,11 +12,6 @@ adminuser:
 	@echo "✅ 超级用户创建成功"
 
 init:
-	@echo "删除迁移文件..."
-	@find ./user ./proceed ./community ./analysis -path "*/migrations/*.py" -not -name "__init__.py" -delete
-	@find ./user ./proceed ./community ./analysis -path "*/migrations/*.pyc" -delete
-	@echo "✅ 迁移文件已删除"
-
 	@echo "执行数据库迁移..."
 	python manage.py makemigrations user proceed community analysis
 	python manage.py migrate
